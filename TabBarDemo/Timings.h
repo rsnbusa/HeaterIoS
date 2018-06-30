@@ -39,7 +39,7 @@
     UIColor *colorActive,*normalColor,*cercaColor,*offColor,*onColor,*notTodayColor;
     UIImage *redHeat,*blueHeat,*statusOn,*statusOff;
     bool statusSend;
-    
+    MQTTMessageHandler viejo;
 }
 -(IBAction)editar:(UIBarButtonItem *)sender ;
 

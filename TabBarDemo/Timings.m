@@ -24,6 +24,7 @@
 
 @implementation Timings
 @synthesize editab,bffIcon,marker,sunmoon,time,popUp,mini,fauceti,textimage,finalImage,fromLabel,totKwh,totValor,amps,ampslabel,tempHum,starter,l24,l6,l12,l18,statusb;
+id app;
 
 //#define kWh 0.1232f
 #define consumoHora 1.0
@@ -361,21 +362,48 @@ backGroundBlurr.frame = CGRectMake(0, 0, screenSize.size.width, screenSize.size.
     return este;
 }
 
+
+
+MQTTMessageHandler reloj=^(MQTTMessage *message)
+{
+    char tcmd[2];
+    uint8_t cmd;
+    LogDebug(@"Setting  msg %@ %@",message.payload,message.payloadString);
+    NSString *cmdstr=[message.payloadString substringToIndex:2];
+  //  cmd=[cmdstr integerValue];
+    //Cmds are
+    // 3 -> not authorized show an alert
+    // 5 -- status
+    // 6 -- general info, show message in alert
+    // 7 -- sleep message
+    // 8 -- showm message for 5 seconds and disregard
+};
+
 -(void)makeHour
+{
+    if(statusSend)
+    {
+        app=appDelegate;
+        if(appDelegate.client){
+            viejo=appDelegate.client.messageHandler;
+            [appDelegate.client setMessageHandler:reloj];
+        }
+        
+    [comm lsender:mis andAnswer:NULL andTimeOut:2 vcController:self];
+    }
+}
+
+-(void)showSettings:(NSString*)lanswer
 {
     int ambient,humidy,waterTemp,waterFlow,ambientTemp,relativeHumidity;
     NSArray *partes;
     NSString *tmph;
     BOOL refreshf,waterf=NO;
     mis=[NSString stringWithFormat:@"status"];
-    NSString *lanswer;
  //   wtemp=@" NA ";
 
-    if(statusSend)
-    {
-    int reply=[comm lsender:mis andAnswer:&lanswer andTimeOut:2 vcController:self];
-
-    if (reply)
+   
+    if (1)
       {
           LogDebug(@"Answer %@",lanswer);
 
@@ -416,7 +444,7 @@ backGroundBlurr.frame = CGRectMake(0, 0, screenSize.size.width, screenSize.size.
               }
           
       }
-    }
+    
     NSManagedObject *matches = nil;
     CGFloat radius,xx,yy,xx2,yy2,xx3,yy3;
     

@@ -30,7 +30,7 @@
 
 @end
 
-#if 0 // set to 1 to enable logs
+#if 1 // set to 1 to enable logs
 #define LogDebug(frmt, ...) NSLog([frmt stringByAppendingString:@"[%s]{%d}"], ##__VA_ARGS__,__PRETTY_FUNCTION__,__LINE__);
 #else
 #define LogDebug(frmt, ...) {}
@@ -39,6 +39,7 @@
 @implementation FirstViewController
 
 @synthesize host,answer,effects,petName,collect,picScroll,mqttServer,album,fotoSize,onOff,netServiceBrowser,passSW,addBut;
+id yo;
 
 -(void)blurScreen
 {
@@ -880,6 +881,43 @@ if (!appDelegate.passwordf)
     }
 }
 
+-(void)showMensajeTimer:(NSString*)mensaje
+{
+    UIAlertController* alert = [UIAlertController alertControllerWithTitle:@"Server Information"
+                                                                   message:mensaje
+                                                            preferredStyle:UIAlertControllerStyleAlert];
+    
+    [self presentViewController:alert animated:YES completion:nil];
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [alert dismissViewControllerAnimated:YES completion:nil];
+    });
+}
+
+MQTTMessageHandler aca=^(MQTTMessage *message)
+{
+    char tcmd[2];
+    uint8_t cmd;
+    LogDebug(@"Incoming msg %@ %@",message.payload,message.payloadString);
+    NSString *cmdstr=[message.payloadString substringToIndex:2];
+    cmd=[cmdstr integerValue];
+    //Cmds are
+    // 3 -> not authorized show an alert
+    // 5 -- status
+    // 6 -- general info, show message in alert
+    // 7 -- sleep message
+    // 8 -- showm message for 5 seconds and disregard
+    
+    switch(cmd)
+    {
+        case 8:
+            [yo showMensajeTimer:message.payloadString];
+            break;
+        default:
+            break; //do nothing
+    }
+    
+};
+
 
 - (void)viewDidLoad {
   
@@ -887,7 +925,7 @@ if (!appDelegate.passwordf)
     passOn =    ([UIDevice currentDevice].userInterfaceIdiom == UIUserInterfaceIdiomPad)?[UIImage imageNamed:@"lockedbig.png"]:[UIImage imageNamed:@"locked.png"];
     passOff =     ([UIDevice currentDevice].userInterfaceIdiom == UIUserInterfaceIdiomPad)?  [UIImage imageNamed:@"unlockedbig.png"]:[UIImage imageNamed:@"unlocked.png"];
 
-    
+    yo=self;
     NSString  *currentDeviceId = [[[UIDevice currentDevice] identifierForVendor]UUIDString];
  //   NSLog(@"UID %@",currentDeviceId);
     comm=[httpVC new];
@@ -941,6 +979,11 @@ if (!appDelegate.passwordf)
     dispatch_async(dispatch_get_main_queue(), ^{
         if(appDelegate.workingBFF!=NULL)
             [appDelegate startTelegramService:[appDelegate.workingBFF valueForKey:@"bffMQTT"] withPort:@"1883"]; //connect to MQTT server
+        
+        if(appDelegate.client){
+             viejo=appDelegate.client.messageHandler;
+             [appDelegate.client setMessageHandler:aca];
+        }
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
             [comm lsender:@"session?password=zipo" andAnswer:NULL andTimeOut:1 vcController:self];
         });
@@ -991,6 +1034,8 @@ if (!appDelegate.passwordf)
         [self loadBffs];
         loadFlag=YES;
     }
+    [appDelegate.client setMessageHandler:viejo];
+
     NSNumber *passw=[[NSUserDefaults standardUserDefaults]objectForKey:@"password"];
     [passSW setImage:passw.integerValue?passOn:passOff forState:UIControlStateNormal];
     if (passw.integerValue>0)

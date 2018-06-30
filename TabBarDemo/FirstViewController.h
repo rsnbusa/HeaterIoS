@@ -28,7 +28,7 @@
     int oldcomo;
     UIImage *passOn,*passOff;
     UIImageView *lscrollView;
-
+    MQTTMessageHandler viejo;
 }
 //@property (strong,nonatomic) IBOutlet
 @property (strong) NSMutableString *host,*answer,*mqttServer;
