@@ -24,7 +24,7 @@
 
 @implementation Timings
 @synthesize editab,bffIcon,marker,sunmoon,time,popUp,mini,fauceti,textimage,finalImage,fromLabel,totKwh,totValor,amps,ampslabel,tempHum,starter,l24,l6,l12,l18,statusb;
-id app;
+id yo,app;
 
 //#define kWh 0.1232f
 #define consumoHora 1.0
@@ -88,9 +88,11 @@ id app;
     //  LogDebug(@"Servdate %@ HastaDate %@ diff %lu",[este valueForKey:@"servDate"],[este valueForKey:@"hastaDate"],diff);
     
     mis=[NSString stringWithFormat:@"sync?pos=%d&day=%d&fromdate=%d&duration=%d&id=%@&notis=%d&onOff=%d&temp=%d",a-1,days,(int)[[este valueForKey:@"servDate"]timeIntervalSince1970],diff, myNewString,(int)[[este valueForKey:@"servNotis"] integerValue],(int)[[este valueForKey:@"servOnOff"] integerValue],(int)[[este valueForKey:@"servTempMax"] integerValue]];//multiple arguments
-    int reply=[comm lsender:mis andAnswer:NULL andTimeOut:[[[NSUserDefaults standardUserDefaults]objectForKey:@"txTimeOut"] intValue] vcController:self];
-    if (!reply)
-        [self showErrorMessage];
+    if(appDelegate.client){
+        viejo=appDelegate.client.messageHandler;
+        [appDelegate.client setMessageHandler:NULL];//nada
+    }
+    [comm lsender:mis andAnswer:NULL andTimeOut:[[[NSUserDefaults standardUserDefaults]objectForKey:@"txTimeOut"] intValue] vcController:self];
     
 }
 
@@ -104,12 +106,12 @@ id app;
 
     }
     mis=[NSString stringWithFormat:@"reset?password=zipo"];//multiple aruments
-    int reply=[comm lsender:mis andAnswer:NULL andTimeOut:[[[NSUserDefaults standardUserDefaults]objectForKey:@"txTimeOut"] intValue] vcController:self];
-    if (!reply)
-    {
-        [self showErrorMessage];
-        return;
+    if(appDelegate.client){
+        viejo=appDelegate.client.messageHandler;
+        [appDelegate.client setMessageHandler:generalAnswer];
     }
+    [comm lsender:mis andAnswer:NULL andTimeOut:[[[NSUserDefaults standardUserDefaults]objectForKey:@"txTimeOut"] intValue] vcController:self];
+
 
 }
 
@@ -120,23 +122,20 @@ id app;
     if (appDelegate.servingsArray.count==0)
     {
         mis=[NSString stringWithFormat:@"Zerousers"];
-        reply=[comm lsender:mis andAnswer:NULL andTimeOut:[[[NSUserDefaults standardUserDefaults]objectForKey:@"txTimeOut"] intValue] vcController:self];
-        if (!reply)
-        {
-            [self showErrorMessage];
-            return;
+        if(appDelegate.client){
+            viejo=appDelegate.client.messageHandler;
+            [appDelegate.client setMessageHandler:NULL];
         }
-
+        [comm lsender:mis andAnswer:NULL andTimeOut:[[[NSUserDefaults standardUserDefaults]objectForKey:@"txTimeOut"] intValue] vcController:self];
     }
     else
     {
         mis=[NSString stringWithFormat:@"Zerousers"];
-        reply=[comm lsender:mis andAnswer:NULL andTimeOut:[[[NSUserDefaults standardUserDefaults]objectForKey:@"txTimeOut"] intValue] vcController:self];
-        if (!reply)
-        {
-            [self showErrorMessage];
-            return;
+        if(appDelegate.client){
+            viejo=appDelegate.client.messageHandler;
+            [appDelegate.client setMessageHandler:NULL];
         }
+        [comm lsender:mis andAnswer:NULL andTimeOut:[[[NSUserDefaults standardUserDefaults]objectForKey:@"txTimeOut"] intValue] vcController:self];
         [self performSelectorOnMainThread:@selector(syncThem) withObject:NULL waitUntilDone:NO];
     }
 }
@@ -231,44 +230,37 @@ backGroundBlurr.frame = CGRectMake(0, 0, screenSize.size.width, screenSize.size.
     UIAlertAction* defaultAction = [UIAlertAction actionWithTitle:@"Ok" style:UIAlertActionStyleDefault
                                                           handler:^(UIAlertAction * action) {
                                                                  [backGroundBlurr removeFromSuperview];
-                                                              mis=[NSString stringWithFormat:@"timerDel?pos=%ld&name=%@",globalSlice,[[appDelegate.servingsArray objectAtIndex:globalSlice] valueForKey:@"servName"]];
+                                                              mis=[NSString stringWithFormat:@"timerDel?pos=%d&name=%@",globalSlice,[[appDelegate.servingsArray objectAtIndex:globalSlice] valueForKey:@"servName"]];
                                                               [context deleteObject:(NSManagedObject*)[appDelegate.servingsArray objectAtIndex:globalSlice]];
                                                               [appDelegate.servingsArray removeObjectAtIndex:globalSlice];
                                                               NSError *error;
                                                               if(![context save:&error])
                                                                   LogDebug(@"Save error %@",error);
-                                                              //    [table reloadData];
                                                               
                                                               [[appDelegate.tabBarController.tabBar.items objectAtIndex:1] setBadgeValue:[NSString stringWithFormat:@"%ld",appDelegate.servingsArray.count]];
-                                                              
-                                                              int reply=[comm lsender:mis andAnswer:NULL andTimeOut:[[[NSUserDefaults standardUserDefaults]objectForKey:@"txTimeOut"] intValue] vcController:self];
-                                                              if (!reply)
-                                                                  [self showErrorMessage];
-                                                            //  else
-                                                                 // [self showOkMessage];
+                                                              if(appDelegate.client){
+                                                                  viejo=appDelegate.client.messageHandler;
+                                                                  [appDelegate.client setMessageHandler:generalAnswer];
+                                                              }
+                                                             [comm lsender:mis andAnswer:NULL andTimeOut:[[[NSUserDefaults standardUserDefaults]objectForKey:@"txTimeOut"] intValue] vcController:self];
                                                               globalSlice=0;
                                                               [self makePie];
                                                               [self.chartContainer.chartView reloadData:YES];
-                                                              //       [self performSegueWithIdentifier:@"doneEditVC" sender:self];
                                                           }];
     UIAlertAction* cancelAction = [UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleDefault
                                                           handler:^(UIAlertAction * action) {
                                                               [backGroundBlurr removeFromSuperview];
-                                                              //       [self performSegueWithIdentifier:@"doneEditVC" sender:self];
                                                           }];
     
     [alert addAction:defaultAction];
     [alert addAction:cancelAction];
     [self presentViewController:alert animated:YES completion:nil];
-
-    
-   
-
 }
 
 -(void)viewDidLoad
 {
     [super viewDidLoad];
+    yo=self;
     [self.chartContainer.chartView setDelegate:(id)self];
     [self.chartContainer.chartView setDataSource:(id)self];
     self.chartContainer.chartView.radiusOffset=0.75;
@@ -314,12 +306,15 @@ backGroundBlurr.frame = CGRectMake(0, 0, screenSize.size.width, screenSize.size.
     UILongPressGestureRecognizer *longTimers = [[UILongPressGestureRecognizer alloc]initWithTarget:self action:@selector(cloneTimers:)];
     [bffIcon addGestureRecognizer:longTimers];
     theStatusTimer=nil;
+    if(appDelegate.client)
+        [appDelegate.client setMessageHandler:reloj];
     
 }
 
 - (void)viewDidDisappear:(BOOL)animated
 {
     [super viewDidDisappear:animated];
+ //     [appDelegate.client setMessageHandler:viejo];
   //  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
     [slices removeAllObjects];
     [self.chartContainer.chartView reloadData:NO];
@@ -362,49 +357,15 @@ backGroundBlurr.frame = CGRectMake(0, 0, screenSize.size.width, screenSize.size.
     return este;
 }
 
-
-
-MQTTMessageHandler reloj=^(MQTTMessage *message)
-{
-    char tcmd[2];
-    uint8_t cmd;
-    LogDebug(@"Setting  msg %@ %@",message.payload,message.payloadString);
-    NSString *cmdstr=[message.payloadString substringToIndex:2];
-  //  cmd=[cmdstr integerValue];
-    //Cmds are
-    // 3 -> not authorized show an alert
-    // 5 -- status
-    // 6 -- general info, show message in alert
-    // 7 -- sleep message
-    // 8 -- showm message for 5 seconds and disregard
-};
-
--(void)makeHour
-{
-    if(statusSend)
-    {
-        app=appDelegate;
-        if(appDelegate.client){
-            viejo=appDelegate.client.messageHandler;
-            [appDelegate.client setMessageHandler:reloj];
-        }
-        
-    [comm lsender:mis andAnswer:NULL andTimeOut:2 vcController:self];
-    }
-}
-
 -(void)showSettings:(NSString*)lanswer
 {
     int ambient,humidy,waterTemp,waterFlow,ambientTemp,relativeHumidity;
     NSArray *partes;
     NSString *tmph;
     BOOL refreshf,waterf=NO;
-    mis=[NSString stringWithFormat:@"status"];
- //   wtemp=@" NA ";
-
-   
-    if (1)
-      {
+    if(appDelegate.client)
+        [appDelegate.client setMessageHandler:viejo];
+    
           LogDebug(@"Answer %@",lanswer);
 
               partes=[lanswer componentsSeparatedByString:@":"];
@@ -442,8 +403,7 @@ MQTTMessageHandler reloj=^(MQTTMessage *message)
                   tempHum.text=tmph;
               //    LogDebug(@"TMpHum %@",tmph);
               }
-          
-      }
+
     
     NSManagedObject *matches = nil;
     CGFloat radius,xx,yy,xx2,yy2,xx3,yy3;
@@ -701,6 +661,48 @@ MQTTMessageHandler reloj=^(MQTTMessage *message)
 
 }
 
+
+-(void)setCallBackNull
+{
+         [appDelegate.client setMessageHandler:NULL];
+}
+
+MQTTMessageHandler reloj=^(MQTTMessage *message)
+{
+    [yo setCallBackNull];
+    LogDebug(@"Reloj msg %@ %@",message.payload,message.payloadString);
+//    NSString *cmdstr=[message.payloadString substringToIndex:2];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [yo showSettings:message.payloadString];
+                   });
+    
+};
+
+MQTTMessageHandler generalAnswer=^(MQTTMessage *message)
+{
+    [yo setCallBackNull];
+    LogDebug(@"General msg %@ %@",message.payload,message.payloadString);
+    //    NSString *cmdstr=[message.payloadString substringToIndex:2];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [yo showMessage:@"Heater Messsage" withMessage:message.payloadString];
+    });
+    
+};
+
+
+-(void)makeHour
+{
+    NSString*mis=[NSString stringWithFormat:@"status"];
+    if(statusSend)
+    {
+        if(appDelegate.client){
+            viejo=appDelegate.client.messageHandler;
+            [appDelegate.client setMessageHandler:reloj];
+        }
+        
+        [comm lsender:mis andAnswer:NULL andTimeOut:2 vcController:self];
+    }
+}
 -(void)tranSunMonn:(BOOL) how
 {
     CATransition *animation = [CATransition animation];
@@ -813,6 +815,8 @@ MQTTMessageHandler reloj=^(MQTTMessage *message)
 - (void)viewDidAppear:(BOOL)animated
 {
     [super viewDidAppear:animated];
+    yo=self;  //CRUCIAL for callbacks else its lost
+
     NSNumber *passw=[[NSUserDefaults standardUserDefaults]objectForKey:@"password"];
     if(passw.integerValue)
     {
@@ -824,6 +828,9 @@ MQTTMessageHandler reloj=^(MQTTMessage *message)
     }
     
     [self workingIcon];
+    if(appDelegate.client){
+        //           viejo=appDelegate.client.messageHandler;
+        [appDelegate.client setMessageHandler:reloj];
     /*
      [self.chartContainer.chartView setDelegate:(id)self];
      [self.chartContainer.chartView setDataSource:(id)self];
@@ -869,6 +876,9 @@ MQTTMessageHandler reloj=^(MQTTMessage *message)
                                        userInfo:nil
                                         repeats:NO];
           }
+
+    }
+   //   [appDelegate.client setMessageHandler:reloj];
 
 }
 
@@ -927,52 +937,38 @@ MQTTMessageHandler reloj=^(MQTTMessage *message)
     return indexPath;
 }
 
--(BOOL)turnOn
+-(void)turnOn
 {
-    NSString *lanswer;
-
     if([[appDelegate.workingBFF valueForKey:@"bffOnOff"] integerValue]==0)
     {
         [self showMessage:@"Heater is OFF" withMessage:@"Can not send Turn On"];
-        return NO;
+        return;
     }
-   // NSLog(@"OnTxTimeout %d",[[[NSUserDefaults standardUserDefaults]objectForKey:@"txTimeOut"]intValue]);
+    if(appDelegate.client){
+        viejo=appDelegate.client.messageHandler;
+        [appDelegate.client setMessageHandler:generalAnswer];
+    }
     mis=[NSString stringWithFormat:@"manual?st=1"];
-    int reply=[comm lsender:mis andAnswer:&lanswer andTimeOut:[[[NSUserDefaults standardUserDefaults]objectForKey:@"txTimeOut"] intValue] vcController:self];
-    if (!reply)
-    {
-        [self showMessage:@"Manual Activation" withMessage:@"Could not turn Heater ON"];
-        return NO;
-    }
-  //  else
-    //    [self showMessage:@"Manual Activation" withMessage:@"Heater ON"];
-    return YES;
+   [comm lsender:mis andAnswer:NULL andTimeOut:[[[NSUserDefaults standardUserDefaults]objectForKey:@"txTimeOut"] intValue] vcController:self];
+ 
 
 }
 
--(BOOL)turnOff
+-(void)turnOff
 {
-    NSString *lanswer;
-
     if([[appDelegate.workingBFF valueForKey:@"bffOnOff"] integerValue]==0)
     {
         [self showMessage:@"Heater is OFF" withMessage:@"Can not send Turn Off"];
-        return NO;
+        return;
     }
-  //  NSLog(@"OffTxTimeout %d",[[[NSUserDefaults standardUserDefaults]objectForKey:@"txTimeOut"]intValue]);
 
-    mis=[NSString stringWithFormat:@"manual?st=0"];
-    int reply=[comm lsender:mis andAnswer:&lanswer andTimeOut:[[[NSUserDefaults standardUserDefaults]objectForKey:@"txTimeOut"] intValue] vcController:self];
-    if (!reply)
-    {
-        [self showMessage:@"Manual Activation" withMessage:@"Could not turn Heater OFF"];
-        return NO;
+    if(appDelegate.client){
+        viejo=appDelegate.client.messageHandler;
+        [appDelegate.client setMessageHandler:generalAnswer];
     }
-  //  else
-    //    [self showMessage:@"Manual Activation" withMessage:@"Heater OFF"];
-    //send cmd
-    return YES;
-    
+    mis=[NSString stringWithFormat:@"manual?st=0"];
+   [comm lsender:mis andAnswer:NULL andTimeOut:[[[NSUserDefaults standardUserDefaults]objectForKey:@"txTimeOut"] intValue] vcController:self];
+
 }
 
 -(void)changeTimer:(int)cual
@@ -988,14 +984,14 @@ MQTTMessageHandler reloj=^(MQTTMessage *message)
     NSError *error;
     if(![context save:&error])
         LogDebug(@"Save error timerchange%@",error);
+    if(appDelegate.client){
+        viejo=appDelegate.client.messageHandler;
+        [appDelegate.client setMessageHandler:generalAnswer];
+    }
     mis=[NSString stringWithFormat:@"timerOnOff?pos=%d&st=%d&name=%@",cual,estado,[[appDelegate.servingsArray objectAtIndex:cual] valueForKey:@"servName"]];
-    int reply=[comm lsender:mis andAnswer:NULL andTimeOut:[[[NSUserDefaults standardUserDefaults]objectForKey:@"txTimeOut"] intValue] vcController:self];
-    if (!reply)
-        [self showMessage:@"Timer Change" withMessage:@"Could not change Timer"];
-  //  else
-     //   [self showMessage:@"Timer Change" withMessage:@"Timer Changed"];
-    //send cmd
-    
+
+    [comm lsender:mis andAnswer:NULL andTimeOut:[[[NSUserDefaults standardUserDefaults]objectForKey:@"txTimeOut"] intValue] vcController:self];
+  
 }
 
 - (void)doughnutChart:(XYDoughnutChart *)doughnutChart didSelectSliceAtIndexPath:(NSIndexPath *)indexPath
@@ -1068,12 +1064,12 @@ MQTTMessageHandler reloj=^(MQTTMessage *message)
     como =!como;
     [appDelegate.servingsArray[globalSlice] setValue:[NSNumber numberWithInteger:como] forKey:@"servNotis"];
     mis=[NSString stringWithFormat:@"emailChange?pos=%d&st=%d",globalSlice,como];
-    int reply=[comm lsender:mis andAnswer:NULL andTimeOut:[[[NSUserDefaults standardUserDefaults]objectForKey:@"txTimeOut"] intValue] vcController:self];
-    if (!reply)
-        [self showMessage:@"Mail Change" withMessage:@"Could not change Email notification"];
-    //  else
-    //    [self showMessage:@"Mail Change" withMessage:@"Email Changed"];
-    //send cmd
+    if(appDelegate.client){
+        viejo=appDelegate.client.messageHandler;
+        [appDelegate.client setMessageHandler:generalAnswer];
+    }
+    [comm lsender:mis andAnswer:NULL andTimeOut:[[[NSUserDefaults standardUserDefaults]objectForKey:@"txTimeOut"] intValue] vcController:self];
+  
     NSError *error;
     if(![context save:&error])
         LogDebug(@"Save error emailchange%@",error);
@@ -1297,23 +1293,32 @@ MQTTMessageHandler reloj=^(MQTTMessage *message)
 
 -(IBAction)fireHeater:(UIButton*)sender
 {
-  //  NSLog(@"Start tag %d",starter.tag);
+ //   NSLog(@"Start tag %lu starter %@ %@ %@",starter.tag,starter,[starter imageForState:UIControlStateNormal],redHeat);
+    if (starter.tag==0)
+    {
+      //  [starter setImage:redHeat forState:UIControlStateSelected];
+        sender.imageView.animationImages = [NSArray arrayWithObjects:redHeat,nil];
+        starter.tag=1;
+     //   NSLog(@"Starter 0 tag %lu",starter.tag);
+        
+        dispatch_async(dispatch_get_main_queue(), ^{[self turnOn];});
+    }
+    else
+    {
+      //  [starter setImage:blueHeat forState:UIControlStateSelected];
+
+        sender.imageView.animationImages = [NSArray arrayWithObjects:blueHeat,nil];
+        starter.tag=0;
+  //      NSLog(@"Starter 1 tag %lu",starter.tag);
+        
+        dispatch_async(dispatch_get_main_queue(), ^{[self turnOff];});
+    }
+    
     [UIView animateWithDuration:0.5 animations:^{
         starter.alpha = 0.0f;
     } completion:^(BOOL finished) {
       //  starter.imageView.animationImages = [NSArray arrayWithObjects:([sender imageForState:UIControlStateNormal]==blueHeat)?redHeat:blueHeat,nil];
-        if (starter.tag==0)
-        {
-            starter.imageView.animationImages = [NSArray arrayWithObjects:redHeat,nil];
-            starter.tag=1;
-            dispatch_async(dispatch_get_main_queue(), ^{[self turnOn];});
-        }
-        else
-        {
-            starter.imageView.animationImages = [NSArray arrayWithObjects:blueHeat,nil];
-            starter.tag=0;
-             dispatch_async(dispatch_get_main_queue(), ^{[self turnOff];});
-        }
+
         [starter.imageView startAnimating];
         [UIView animateWithDuration:0.5 animations:^{
             starter.alpha = 1.0f;
@@ -1331,103 +1336,6 @@ MQTTMessageHandler reloj=^(MQTTMessage *message)
     {
         return appDelegate.servingsArray.count;
     }
-/*
-#pragma mark - UITableViewDataSource
-
--(void)askMeal:(int)cual
-{
-    UIAlertController* alert = [UIAlertController alertControllerWithTitle:@"Manual Starting"
-                                                                   message:@"Confirm manual start please"
-                                                            preferredStyle:UIAlertControllerStyleAlert];
-    UIAlertAction* defaultAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault
-                                                          handler:^(UIAlertAction * action) {
-                                                              LogDebug(@"Send openning %d",cual);
-                                                              mis=[NSString stringWithFormat:@"manualStart?pos=%d",cual];//multiple arguments
-                                                              [comm lsender:mis andAnswer:answer andTimeOut:[[[NSUserDefaults standardUserDefaults]objectForKey:@"txTimeOut"] intValue] vcController:self];
-                                                          }];
-    
-    [alert addAction:defaultAction];
-    UIAlertAction* cancelaction = [UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleDefault
-                                                          handler:^(UIAlertAction * action) {
-                                                              //       [self performSegueWithIdentifier:@"doneEditVC" sender:self];
-                                                          }];
-    
-    [alert addAction:cancelaction];
-
-    [self presentViewController:alert animated:YES completion:nil];
-}
-
--(void)longPressTap:(UITableViewCell*)sender
-{
-    UIGestureRecognizer *recognizer = (UIGestureRecognizer*) sender;
-    [self askMeal:recognizer.view.tag];
-}
- */
-/*
-- (void)tableView:(UITableView *)tableView willDisplayCell:(servingCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath {
-    UIColor *este=[cell.nameLabel.textColor colorWithAlphaComponent:0.25];
-    
-    cell.backgroundColor = este;
-}
-- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
-{
-#define kWh 0.1232f
-#define consumoHora 1
-    
-    servingCell *cell = [tableView dequeueReusableCellWithIdentifier:@"servingCell"];
-    NSManagedObject *matches = nil;
-    matches = [appDelegate.servingsArray objectAtIndex:indexPath.row];
-    cell.nameLabel.text = [matches valueForKey:@"servName"];
-    cell.nameLabel.textColor=blueC;
-    uint8_t days=[[matches valueForKey:@"servDays"]integerValue];
-    NSString *dias=[NSString stringWithFormat:@"%c%c%c%c%c%c%c",(days & 0x1)? 'S':'-',(days & 0x2)? 'M':'-',(days & 0x4)? 'T':'-',(days & 0x8)? 'W':'-',
-                    (days & 0x10)? 'T':'-',(days & 0x20)? 'F':'-',(days & 0x40)? 'S':'-'];// Sunday Monday Tuesday Wednesday Thursday Friday Saturday
-    cell.dayLabel.text=dias;
-    cell.dayLabel.textColor=orangeC;
-    NSDateFormatter* dateFormatter = [[NSDateFormatter alloc] init];
-    [dateFormatter setDateFormat:@"HH:mm"];
-    NSString  *formatedDate = [dateFormatter stringFromDate:[matches valueForKey:@"servDate"]];
-    cell.timeLabel.text=formatedDate;
-    cell.timeLabel.textColor=greenC;
-    formatedDate = [dateFormatter stringFromDate:[matches valueForKey:@"hastaDate"]];
-    cell.hastaLabel.text=formatedDate;
-    cell.hastaLabel.textColor=redC;
-    NSTimeInterval diff=[[matches valueForKey:@"hastaDate"] timeIntervalSinceDate:[matches valueForKey:@"servDate"]];
-    LogDebug(@"hasta %@ desde %@ diff %f",[matches valueForKey:@"hastaDate"],[matches valueForKey:@"servDate"],diff);
-    int horas=(int)diff/3600;
-    int minutos= (diff-horas*3600)/60;
-    cell.durationLabel.text=[NSString stringWithFormat:@"%02d:%02d",horas,minutos];
-    float costo=diff/3600*kWh*consumoHora;
-    costoTd +=costo;
-    cell.costLabel.text=[NSString stringWithFormat:@"$%3.02f",costo];
-    cell.costLabel.textColor=yellowC;
-    totalDay.text=[NSString stringWithFormat:@"$%3.02f",costoTd];
-    totalDay.textColor=yellowC;
-    costo *=30;
-    costoTm +=costo;
-    cell.monthLabel.text=[NSString stringWithFormat:@"$%3.02f",costo];
-    cell.monthLabel.textColor=redC;
-    totalMonth.text=[NSString stringWithFormat:@"$%3.02f",costoTm];
-    totalMonth.textColor=redC;
-    NSDate *cuando=[matches valueForKey:@"dateAdded"];
-    NSString *syncName=@"downloadOk.png";
-    if (cuando ==NULL)
-        syncName=@"downloaded.png";
-    cell.synced.image=[UIImage imageNamed:syncName];
-    cell.tag=indexPath.row;
-    UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc]initWithTarget:self action:@selector(longPressTap:)];
-    [cell addGestureRecognizer:longPress];
-    return cell;
-    
-}
-
-- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
-{
-    //must pass data to next seque to edit
-    return;
-    
-}
-*/
 
 @end
 

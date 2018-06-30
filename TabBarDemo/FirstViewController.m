@@ -128,6 +128,10 @@ id yo;
     int cual=sender.tag?0:1;
     [self OnOffState:cual];
     NSString *cmd=[NSString stringWithFormat:@"OnOff?status=%d",cual];
+    if(appDelegate.client){
+  //      viejo=appDelegate.client.messageHandler;
+        [appDelegate.client setMessageHandler:aca];
+    }
     [comm lsender:cmd andAnswer:NULL andTimeOut:[[[NSUserDefaults standardUserDefaults]objectForKey:@"txTimeOut"] intValue]];
     [appDelegate.workingBFF setValue:[NSNumber numberWithInteger:cual] forKey:@"bffOnOff"];
     NSError *error;
@@ -893,29 +897,16 @@ if (!appDelegate.passwordf)
     });
 }
 
+-(void)resetCallBack
+{
+     [appDelegate.client setMessageHandler:viejo];
+}
+
 MQTTMessageHandler aca=^(MQTTMessage *message)
 {
-    char tcmd[2];
-    uint8_t cmd;
     LogDebug(@"Incoming msg %@ %@",message.payload,message.payloadString);
-    NSString *cmdstr=[message.payloadString substringToIndex:2];
-    cmd=[cmdstr integerValue];
-    //Cmds are
-    // 3 -> not authorized show an alert
-    // 5 -- status
-    // 6 -- general info, show message in alert
-    // 7 -- sleep message
-    // 8 -- showm message for 5 seconds and disregard
-    
-    switch(cmd)
-    {
-        case 8:
-            [yo showMensajeTimer:message.payloadString];
-            break;
-        default:
-            break; //do nothing
-    }
-    
+    [yo showMensaje:@"Heater Message" withMessage:message.payloadString doExit:NO];
+    [yo resetCallBack];
 };
 
 
@@ -981,7 +972,7 @@ MQTTMessageHandler aca=^(MQTTMessage *message)
             [appDelegate startTelegramService:[appDelegate.workingBFF valueForKey:@"bffMQTT"] withPort:@"1883"]; //connect to MQTT server
         
         if(appDelegate.client){
-             viejo=appDelegate.client.messageHandler;
+  //           viejo=appDelegate.client.messageHandler;
              [appDelegate.client setMessageHandler:aca];
         }
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
@@ -1021,6 +1012,8 @@ MQTTMessageHandler aca=^(MQTTMessage *message)
 -(void)viewDidDisappear:(BOOL)animated
 {
     [super viewDidDisappear:animated];
+    [appDelegate.client setMessageHandler:viejo];
+
     NSNumber *passw=[[NSUserDefaults standardUserDefaults]objectForKey:@"password"];
     if (passw.integerValue==0)
         [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationWillEnterForegroundNotification object:nil];
@@ -1034,7 +1027,9 @@ MQTTMessageHandler aca=^(MQTTMessage *message)
         [self loadBffs];
         loadFlag=YES;
     }
-    [appDelegate.client setMessageHandler:viejo];
+  yo=self;
+    if(appDelegate.client)
+        [appDelegate.client setMessageHandler:aca];
 
     NSNumber *passw=[[NSUserDefaults standardUserDefaults]objectForKey:@"password"];
     [passSW setImage:passw.integerValue?passOn:passOff forState:UIControlStateNormal];
