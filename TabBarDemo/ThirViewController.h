@@ -14,6 +14,7 @@
 #import "TextFieldValidator.h"
 #import "httpVc.h"
 #import "CircularPickerView.h"
+#import "AMTumblrHud.h"
 
 @interface ThirViewController : UIViewController
 {
@@ -29,13 +30,15 @@
     UIView *backGroundBlurr;
     UIImage *arrowConnected, *arrowDisconnected;
     BOOL arrowState;
+    AMTumblrHud *tumblrHUD ;
+    NSTimer *mitimer;
 }
 
 @property int theNum;
 @property (strong) IBOutlet UIDatePicker *datePicker,*hastaPicker;
 @property (strong) IBOutlet MultiSelectSegmentedControl *dias;
 @property (strong) IBOutlet TextFieldValidator *name,*passww;
-@property (strong) IBOutlet UIImageView *bffIcon,*email;
+@property (strong) IBOutlet UIImageView *bffIcon,*email,*hhud;
 @property (strong) IBOutlet UISwitch *notis,*once;
 @property (strong) IBOutlet UIButton *arrow;
 @property (strong) IBOutlet UILabel *temp,*lowTempLabel;

@@ -11,6 +11,7 @@
 #import "DoughnutChartContainerView.h"
 #import "blurLabel.h"
 #import "btSimplePopUp.h"
+#import "AMTumblrHud.h"
 
 @interface Timings : UIViewController <btSimplePopUpDelegate>
 {
@@ -40,13 +41,15 @@
     UIImage *redHeat,*blueHeat,*statusOn,*statusOff;
     bool statusSend;
     MQTTMessageHandler viejo;
+    AMTumblrHud *tumblrHUD ;
+    NSTimer *mitimer;
 }
 -(IBAction)editar:(UIBarButtonItem *)sender ;
 
 //@property (strong) IBOutlet UITableView *table;
 @property (nonatomic, retain) IBOutlet UIVisualEffectView *capa;
 @property (strong) IBOutlet UIBarButtonItem *editab;
-@property (strong) IBOutlet UIImageView *bffIcon,*marker,*dumb;
+@property (strong) IBOutlet UIImageView *bffIcon,*marker,*dumb,*hhud;
 @property (strong) IBOutlet UIView *mainView;
 @property (weak) IBOutlet DoughnutChartContainerView *chartContainer;
 @property (weak) IBOutlet XYDoughnutChart *xyview;

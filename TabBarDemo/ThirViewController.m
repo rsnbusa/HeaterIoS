@@ -27,6 +27,69 @@
 @import UIKit;
 @implementation ThirViewController
 @synthesize datePicker,dias,dirtyt,dirtys,openT,waitT,name,lastSegment,theNum,bffIcon,hastaPicker,passww,notis,circleTemp,temp,lowTemp,lowTempLabel,once;
+id yo;
+
+
+-(void)killBill
+{
+    if(tumblrHUD)
+        [tumblrHUD hide];
+    [self showMessage:@"Meter Msg" withMessage:@"Comm Timeout"];
+}
+
+-(void)hud
+{
+    dispatch_async(dispatch_get_main_queue(), ^{
+        tumblrHUD = [[AMTumblrHud alloc] initWithFrame:CGRectMake((CGFloat) (_hhud.frame.origin.x),
+                                                                  (CGFloat) (_hhud.frame.origin.y), 55, 20)];
+        tumblrHUD.hudColor = _hhud.backgroundColor;
+        [self.view addSubview:tumblrHUD];
+        [tumblrHUD showAnimated:YES];
+        mitimer=[NSTimer scheduledTimerWithTimeInterval:10
+                                                 target:self
+                                               selector:@selector(killBill)
+                                               userInfo:nil
+                                                repeats:NO];
+    });
+}
+
+
+-(void)showMessage:(NSString*)title withMessage:(NSString*)que
+{
+    if(mitimer)
+        [mitimer invalidate];
+    dispatch_async(dispatch_get_main_queue(), ^{ [tumblrHUD hide];});
+    
+    UIAlertController* alert = [UIAlertController alertControllerWithTitle:title
+                                                                   message:que
+                                                            preferredStyle:UIAlertControllerStyleAlert];
+    UIAlertAction* defaultAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault
+                                                          handler:^(UIAlertAction * action) {
+                                                              
+                                                          }];
+    
+    [alert addAction:defaultAction];
+    [self presentViewController:alert animated:YES completion:nil];
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [alert dismissViewControllerAnimated:YES completion:nil];
+    });
+}
+
+-(void)setCallBackNull
+{
+    [appDelegate.client setMessageHandler:NULL];
+}
+
+
+MQTTMessageHandler settingsMsg=^(MQTTMessage *message)
+{
+    [yo setCallBackNull];
+    LogDebug(@"SettingsMsg %@ %@",message.payload,message.payloadString);
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [yo showMessage:@"HeatIoT Timer Msg" withMessage:message.payloadString];
+    });
+};
+
 
 -(void)calcTimeToTemp
 {
@@ -123,13 +186,11 @@
 
 -(void)showOkMessage
 {
-     [self blurScreen];
     UIAlertController* alert = [UIAlertController alertControllerWithTitle:@"Timer Added"
                                                                    message:[NSString stringWithFormat:@"Confirmed by %@",[appDelegate.workingBFF valueForKey:@"bffName"]]
                                                             preferredStyle:UIAlertControllerStyleAlert];
     UIAlertAction* defaultAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault
                                                           handler:^(UIAlertAction * action) {
-                                                               [backGroundBlurr removeFromSuperview];
                                                               [self performSegueWithIdentifier:@"doneEditVC" sender:self];
                                                           }];
     
@@ -203,6 +264,29 @@
     
     return YES;
 }
+-(void)timerAddedOk:(NSString*)lanswer
+{
+    NSManagedObjectContext *context =
+    [appDelegate managedObjectContext];
+    NSError *error;
+    if(![context save:&error])
+    {
+        LogDebug(@"Save error %@",error);
+        return;//if we cant save it return and dont send anything toi the esp8266
+    }
+    [yo showOkMessage];
+
+
+}
+MQTTMessageHandler addTimerRx=^(MQTTMessage *message)
+{
+    [yo setCallBackNull];
+    LogDebug(@"Timer Add %@ %@",message.payload,message.payloadString);
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [yo timerAddedOk:message.payloadString];
+    });
+};
+
 -(void)saveChanges
 {
     NSDate *fromDate;
@@ -306,7 +390,8 @@
     [newServing setValue: [NSNumber numberWithInteger:40] forKey:@"servTempMin"];
     [newServing setValue: [NSNumber numberWithInteger:(int)circleTemp.currentValue==0?40:(int)circleTemp.currentValue] forKey:@"servTempMax"];
     [newServing setValue:  [appDelegate.workingBFF valueForKey:@"bffName"] forKey:@"servBFFName"];
-  
+    [newServing setValue:[NSDate date] forKey:@"dateAdded"];
+
     NSMutableSet *serv=[appDelegate.workingBFF mutableSetValueForKey:@"meals"];
     [serv addObject:newServing];
     [appDelegate.workingBFF setValue:serv forKey:@"meals"];
@@ -319,22 +404,20 @@
                                                                       range:NSMakeRange(0, [result length])];
     //send ESP8266 a New Meal, id=position in array, day=byte with bits for each day,hour-minute,Open time miliseconds and wait time
     mis=[NSString stringWithFormat:@"timerAdd?id=%@&day=%d&fromdate=%d&duration=%d&notis=%d&onOff=%d&temp=%d&once=%d",myNewString,ld,(int)[fromDate timeIntervalSince1970],(int)timeDiff,notis.on,1,(int)circleTemp.currentValue,once.on];//multiple arguments
+    [self hud];
+    if(appDelegate.client)
+        [appDelegate.client setMessageHandler:addTimerRx];
     int reply=[comm lsender:mis andAnswer:NULL andTimeOut:[[[NSUserDefaults standardUserDefaults]objectForKey:@"txTimeOut"] intValue] vcController:self];
-    if (!reply)
-        [self showErrorMessage];
-    else
-    {
-        [newServing setValue:[NSDate date] forKey:@"dateAdded"];// means it has been synced
-        [self showOkMessage];
-    }
+//    if (!reply)
+//        [self showErrorMessage];
+//    else
+//    {
+//        [newServing setValue:[NSDate date] forKey:@"dateAdded"];// means it has been synced
+//        [self showOkMessage];
+//    }
     
     // save the data
-    NSError *error;
-    if(![context save:&error])
-    {
-        LogDebug(@"Save error %@",error);
-        return;//if we cant save it return and dont send anything toi the esp8266
-    }
+   
 
 }
 
@@ -446,6 +529,7 @@
 */
 -(void)viewWillAppear:(BOOL)animated
 {
+    yo=self;
     [super viewWillAppear:animated];
     LogDebug(@"Passf %d",appDelegate.passwordf);
     if (!appDelegate.passwordf)
@@ -550,6 +634,7 @@
 
 - (void)viewDidLoad {
 
+    yo=self;
     [super viewDidLoad];
     comm=[httpVC new];
     [self pickerColors];

@@ -7,6 +7,12 @@
 //
 
 #import "resetVC.h"
+#if 1 // set to 1 to enable logs
+#define LogDebug(frmt, ...) NSLog([frmt stringByAppendingString:@"[%s]{%d}"], ##__VA_ARGS__,__PRETTY_FUNCTION__,__LINE__);
+#else
+#define LogDebug(frmt, ...) {}
+#endif
+
 
 @interface resetVC ()
 
@@ -14,14 +20,75 @@
 
 @implementation resetVC
 
+id yo;
+
+-(void)killBill
+{
+    if(tumblrHUD)
+        [tumblrHUD hide];
+    [self showMessage:@"Heater Msg" withMessage:@"Comm Timeout"];
+}
+
+-(void)hud
+{
+    dispatch_async(dispatch_get_main_queue(), ^{
+        tumblrHUD = [[AMTumblrHud alloc] initWithFrame:CGRectMake((CGFloat) (_hhud.frame.origin.x),
+                                                                  (CGFloat) (_hhud.frame.origin.y), 55, 20)];
+        tumblrHUD.hudColor = _hhud.backgroundColor;
+        [self.view addSubview:tumblrHUD];
+        [tumblrHUD showAnimated:YES];
+        mitimer=[NSTimer scheduledTimerWithTimeInterval:10
+                                                 target:self
+                                               selector:@selector(killBill)
+                                               userInfo:nil
+                                                repeats:NO];
+    });
+}
+-(void)setCallBackNull
+{
+    [appDelegate.client setMessageHandler:NULL];
+}
+
+-(void)showMessage:(NSString*)title withMessage:(NSString*)que
+{
+    if(mitimer)
+        [mitimer invalidate];
+    dispatch_async(dispatch_get_main_queue(), ^{[tumblrHUD hide];});
+
+        UIAlertController* alert = [UIAlertController alertControllerWithTitle:title
+                                                                       message:que
+                                                                preferredStyle:UIAlertControllerStyleAlert];
+        UIAlertAction* defaultAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault
+                                                              handler:^(UIAlertAction * action) {
+                                                                  
+                                                                  
+                                                              }];
+        
+        [alert addAction:defaultAction];
+        [self presentViewController:alert animated:YES completion:nil];
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            [alert dismissViewControllerAnimated:YES completion:nil];
+        });
+    }
+
+MQTTMessageHandler resetx=^(MQTTMessage *message)
+{
+    LogDebug(@"Heater SettingsMsg %@ %@",message.payload,message.payloadString);
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [yo showMessage:@"HeaterIoT Settings Msg" withMessage:message.payloadString];
+    });
+};
 //extern BOOL CheckWiFi();
 
 -(void)sendCmd:(NSString*)comando withTitle:(NSString*)title
 {
     UIAlertController *alert = [UIAlertController alertControllerWithTitle:title message:@"Please Confirm" preferredStyle:UIAlertControllerStyleAlert];
     UIAlertAction *defaultAction = [UIAlertAction actionWithTitle:@"Ok" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action){
-        NSString *lanswer;
-        [comm lsender:comando andAnswer:&lanswer  andTimeOut:2 vcController:self];
+        [self hud];
+        yo=self;
+        if(appDelegate.client)
+            [appDelegate.client setMessageHandler:resetx];
+        [comm lsender:comando andAnswer:NULL  andTimeOut:2 vcController:self];
     }];
     UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleDefault handler:nil];
     [alert addAction:defaultAction];
@@ -45,8 +112,8 @@
     NSString *mensa;
     int son=sender.value;
     mensa=[NSString stringWithFormat:@"display?password=zipo&disptime=%d",son];
-    NSString *lanswer;
-    [comm lsender:mensa andAnswer:&lanswer  andTimeOut:2 vcController:self];
+    [self hud];
+    [comm lsender:mensa andAnswer:NULL  andTimeOut:2 vcController:self];
     NSManagedObjectContext *context =
     [appDelegate managedObjectContext];
     NSError *error;
@@ -67,8 +134,8 @@
     int son=sender.value/0.5;
     float final=0.5 * (float)son;
     mensa=[NSString stringWithFormat:@"ampscalib?password=zipo&calib=%.1f",final];
-    NSString *lanswer;
-    [comm lsender:mensa andAnswer:&lanswer  andTimeOut:2 vcController:self];
+    [self hud];
+    [comm lsender:mensa andAnswer:NULL  andTimeOut:2 vcController:self];
     NSManagedObjectContext *context =
     [appDelegate managedObjectContext];
     NSError *error;
@@ -108,6 +175,8 @@
     appDelegate = (AppDelegate *)[[UIApplication sharedApplication] delegate];
     [self workingIcon];
     comm=[httpVC new];
+    if(appDelegate.client)
+        [appDelegate.client setMessageHandler:resetx];
     _ampText.text=[NSString stringWithFormat:@"%.1f", (float)[[appDelegate.workingBFF valueForKey:@"bffAmps"]floatValue]];
     _ampSlider.value=(float)[[appDelegate.workingBFF valueForKey:@"bffAmps"]floatValue];
     _dispT.text=[NSString stringWithFormat:@"%d", [[appDelegate.workingBFF valueForKey:@"bffDisp"]integerValue]];
@@ -115,14 +184,16 @@
     
 }
 
-/*
+
 -(void)viewDidAppear:(BOOL)animated
 {
-    [self viewDidAppear:animated];
+    [super viewDidAppear:animated];
+    yo=self;
     [self workingIcon];
-
+    if(appDelegate.client)
+        [appDelegate.client setMessageHandler:resetx];
 }
- */
+ 
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.

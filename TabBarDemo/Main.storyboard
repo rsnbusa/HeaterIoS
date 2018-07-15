@@ -268,6 +268,14 @@
                                 </constraints>
                                 <color key="onTintColor" red="0.91498154401779175" green="0.37833490967750549" blue="0.73496383428573608" alpha="1" colorSpace="calibratedRGB"/>
                             </switch>
+                            <imageView hidden="YES" userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="olR-sv-WzF">
+                                <rect key="frame" x="157.5" y="435" width="52" height="28"/>
+                                <color key="backgroundColor" red="0.22632074356079102" green="0.77504390478134155" blue="0.31558424234390259" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="52" id="8We-yD-LKt"/>
+                                    <constraint firstAttribute="height" constant="28" id="LTP-tD-Cye"/>
+                                </constraints>
+                            </imageView>
                         </subviews>
                         <color key="backgroundColor" red="0.20000000300000001" green="0.20000000300000001" blue="0.20000000300000001" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
@@ -275,6 +283,7 @@
                             <constraint firstAttribute="leadingMargin" secondItem="bJi-ps-6jH" secondAttribute="leading" id="13M-wc-jqs"/>
                             <constraint firstItem="UiJ-jH-XqM" firstAttribute="top" secondItem="Ia1-K6-d13" secondAttribute="bottom" constant="14" id="4tU-oz-BKY"/>
                             <constraint firstItem="Oy7-NR-hp0" firstAttribute="top" secondItem="Ia1-K6-d13" secondAttribute="bottom" constant="16" id="6GJ-pC-9tz"/>
+                            <constraint firstItem="olR-sv-WzF" firstAttribute="top" secondItem="0kt-a7-uuu" secondAttribute="bottom" constant="8" id="7r1-5m-aME"/>
                             <constraint firstItem="V4a-tU-i4b" firstAttribute="width" secondItem="tsR-hK-woN" secondAttribute="width" id="815-45-NAD"/>
                             <constraint firstItem="boa-xd-xgL" firstAttribute="leading" secondItem="91F-Lu-Jfp" secondAttribute="trailing" constant="24" id="8EJ-Mk-dsc"/>
                             <constraint firstItem="Oy7-NR-hp0" firstAttribute="leading" secondItem="cYj-iK-Fjx" secondAttribute="trailing" constant="12" id="9fe-0G-dCv"/>
@@ -298,6 +307,7 @@
                             <constraint firstItem="RlZ-i8-GVd" firstAttribute="top" secondItem="Ia1-K6-d13" secondAttribute="bottom" id="kdF-6K-AbV"/>
                             <constraint firstItem="RlZ-i8-GVd" firstAttribute="leading" secondItem="rev-j3-De0" secondAttribute="trailing" id="kyO-OM-6Wd"/>
                             <constraint firstItem="boa-xd-xgL" firstAttribute="centerY" secondItem="91F-Lu-Jfp" secondAttribute="centerY" id="mOW-Ux-1Sb"/>
+                            <constraint firstItem="olR-sv-WzF" firstAttribute="centerX" secondItem="0kt-a7-uuu" secondAttribute="centerX" id="nf5-XP-YWf"/>
                             <constraint firstItem="rrr-Sr-jJu" firstAttribute="centerX" secondItem="tsR-hK-woN" secondAttribute="centerX" id="plY-81-YYr"/>
                             <constraint firstItem="RlZ-i8-GVd" firstAttribute="centerX" secondItem="tsR-hK-woN" secondAttribute="centerX" id="qa4-78-LzL"/>
                             <constraint firstItem="rev-j3-De0" firstAttribute="top" secondItem="91F-Lu-Jfp" secondAttribute="bottom" constant="15" id="qhF-aX-TUL"/>
@@ -324,6 +334,7 @@
                         <outlet property="dias" destination="QCv-BI-gOI" id="4Kt-QS-BDA"/>
                         <outlet property="email" destination="bJi-ps-6jH" id="cKk-WN-E19"/>
                         <outlet property="hastaPicker" destination="V4a-tU-i4b" id="mhD-8f-Nk5"/>
+                        <outlet property="hhud" destination="olR-sv-WzF" id="NQH-yp-bbo"/>
                         <outlet property="lowTemp" destination="rev-j3-De0" id="bGT-o5-IiZ"/>
                         <outlet property="lowTempLabel" destination="yPm-PQ-2gm" id="N5T-ww-8M5"/>
                         <outlet property="name" destination="Oy7-NR-hp0" id="P9T-tL-EbH"/>
@@ -417,65 +428,6 @@
                                     <outlet property="delegate" destination="W7F-0N-8Af" id="7Hb-C4-PvS"/>
                                 </connections>
                             </scrollView>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" ambiguous="YES" usesAttributedText="YES" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="ssJ-vx-BYE" userLabel="Title">
-                                <rect key="frame" x="78" y="139" width="219" height="70"/>
-                                <constraints>
-                                    <constraint firstAttribute="width" constant="219" id="2AU-z0-GFm"/>
-                                    <constraint firstAttribute="height" constant="70" id="Dd7-ap-VWI"/>
-                                </constraints>
-                                <attributedString key="attributedText">
-                                    <fragment content="H">
-                                        <attributes>
-                                            <color key="NSColor" red="1" green="0.14901960784313725" blue="0.34509803921568627" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                                            <font key="NSFont" metaFont="system" size="60"/>
-                                            <paragraphStyle key="NSParagraphStyle" alignment="center" lineBreakMode="wordWrapping" baseWritingDirection="natural" tighteningFactorForTruncation="0.0" allowsDefaultTighteningForTruncation="NO"/>
-                                        </attributes>
-                                    </fragment>
-                                    <fragment content="e">
-                                        <attributes>
-                                            <color key="NSColor" red="0.32941176470588235" green="1" blue="0.31372549019607843" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                                            <font key="NSFont" metaFont="system" size="60"/>
-                                            <paragraphStyle key="NSParagraphStyle" alignment="center" lineBreakMode="wordWrapping" baseWritingDirection="natural" tighteningFactorForTruncation="0.0" allowsDefaultTighteningForTruncation="NO"/>
-                                        </attributes>
-                                    </fragment>
-                                    <fragment content="a">
-                                        <attributes>
-                                            <color key="NSColor" red="0.31764705882352939" green="0.52156862745098043" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                                            <font key="NSFont" metaFont="system" size="60"/>
-                                            <paragraphStyle key="NSParagraphStyle" alignment="center" lineBreakMode="wordWrapping" baseWritingDirection="natural" tighteningFactorForTruncation="0.0" allowsDefaultTighteningForTruncation="NO"/>
-                                        </attributes>
-                                    </fragment>
-                                    <fragment content="t">
-                                        <attributes>
-                                            <color key="NSColor" red="0.39215686274509803" green="1" blue="0.5607843137254902" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                                            <font key="NSFont" metaFont="system" size="60"/>
-                                            <paragraphStyle key="NSParagraphStyle" alignment="center" lineBreakMode="wordWrapping" baseWritingDirection="natural" tighteningFactorForTruncation="0.0" allowsDefaultTighteningForTruncation="NO"/>
-                                        </attributes>
-                                    </fragment>
-                                    <fragment content="I">
-                                        <attributes>
-                                            <color key="NSColor" red="0.28627450980392155" green="0.26666666666666666" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                                            <font key="NSFont" metaFont="system" size="60"/>
-                                            <paragraphStyle key="NSParagraphStyle" alignment="center" lineBreakMode="wordWrapping" baseWritingDirection="natural" tighteningFactorForTruncation="0.0" allowsDefaultTighteningForTruncation="NO"/>
-                                        </attributes>
-                                    </fragment>
-                                    <fragment content="o">
-                                        <attributes>
-                                            <color key="NSColor" red="0.94901960784313721" green="0.30196078431372547" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                                            <font key="NSFont" metaFont="system" size="60"/>
-                                            <paragraphStyle key="NSParagraphStyle" alignment="center" lineBreakMode="wordWrapping" baseWritingDirection="natural" tighteningFactorForTruncation="0.0" allowsDefaultTighteningForTruncation="NO"/>
-                                        </attributes>
-                                    </fragment>
-                                    <fragment content="T">
-                                        <attributes>
-                                            <color key="NSColor" red="0.94901960784313721" green="1" blue="0.070588235294117646" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                                            <font key="NSFont" metaFont="system" size="60"/>
-                                            <paragraphStyle key="NSParagraphStyle" alignment="center" lineBreakMode="wordWrapping" baseWritingDirection="natural" tighteningFactorForTruncation="0.0" allowsDefaultTighteningForTruncation="NO"/>
-                                        </attributes>
-                                    </fragment>
-                                </attributedString>
-                                <color key="highlightedColor" red="0.94901960784313721" green="1" blue="0.070588235294117646" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                            </label>
                             <label hidden="YES" opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" ambiguous="YES" text="" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="HKB-Qh-ELR">
                                 <rect key="frame" x="62.5" y="381.5" width="250" height="47"/>
                                 <constraints>
@@ -540,6 +492,73 @@
                                     <action selector="addBFF:" destination="W7F-0N-8Af" eventType="touchUpInside" id="vZU-XJ-IkC"/>
                                 </connections>
                             </button>
+                            <imageView hidden="YES" userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="GCv-oI-Gdf">
+                                <rect key="frame" x="151" y="114" width="73" height="39"/>
+                                <color key="backgroundColor" red="0.94788497686386108" green="1" blue="0.070483185350894928" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="39" id="iqW-gu-5RJ"/>
+                                    <constraint firstAttribute="width" constant="73" id="m96-Og-Ghg"/>
+                                </constraints>
+                            </imageView>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" usesAttributedText="YES" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="ssJ-vx-BYE" userLabel="Title">
+                                <rect key="frame" x="78" y="36" width="219" height="70"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="219" id="0wX-8y-huH"/>
+                                    <constraint firstAttribute="height" constant="70" id="7Zu-Oi-HKM"/>
+                                </constraints>
+                                <attributedString key="attributedText">
+                                    <fragment content="H">
+                                        <attributes>
+                                            <color key="NSColor" red="1" green="0.14901960784313725" blue="0.34509803921568627" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                            <font key="NSFont" metaFont="system" size="60"/>
+                                            <paragraphStyle key="NSParagraphStyle" alignment="center" lineBreakMode="wordWrapping" baseWritingDirection="natural" tighteningFactorForTruncation="0.0" allowsDefaultTighteningForTruncation="NO"/>
+                                        </attributes>
+                                    </fragment>
+                                    <fragment content="e">
+                                        <attributes>
+                                            <color key="NSColor" red="0.32941176470588235" green="1" blue="0.31372549019607843" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                            <font key="NSFont" metaFont="system" size="60"/>
+                                            <paragraphStyle key="NSParagraphStyle" alignment="center" lineBreakMode="wordWrapping" baseWritingDirection="natural" tighteningFactorForTruncation="0.0" allowsDefaultTighteningForTruncation="NO"/>
+                                        </attributes>
+                                    </fragment>
+                                    <fragment content="a">
+                                        <attributes>
+                                            <color key="NSColor" red="0.31764705882352939" green="0.52156862745098043" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                            <font key="NSFont" metaFont="system" size="60"/>
+                                            <paragraphStyle key="NSParagraphStyle" alignment="center" lineBreakMode="wordWrapping" baseWritingDirection="natural" tighteningFactorForTruncation="0.0" allowsDefaultTighteningForTruncation="NO"/>
+                                        </attributes>
+                                    </fragment>
+                                    <fragment content="t">
+                                        <attributes>
+                                            <color key="NSColor" red="0.39215686274509803" green="1" blue="0.5607843137254902" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                            <font key="NSFont" metaFont="system" size="60"/>
+                                            <paragraphStyle key="NSParagraphStyle" alignment="center" lineBreakMode="wordWrapping" baseWritingDirection="natural" tighteningFactorForTruncation="0.0" allowsDefaultTighteningForTruncation="NO"/>
+                                        </attributes>
+                                    </fragment>
+                                    <fragment content="I">
+                                        <attributes>
+                                            <color key="NSColor" red="0.28627450980392155" green="0.26666666666666666" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                            <font key="NSFont" metaFont="system" size="60"/>
+                                            <paragraphStyle key="NSParagraphStyle" alignment="center" lineBreakMode="wordWrapping" baseWritingDirection="natural" tighteningFactorForTruncation="0.0" allowsDefaultTighteningForTruncation="NO"/>
+                                        </attributes>
+                                    </fragment>
+                                    <fragment content="o">
+                                        <attributes>
+                                            <color key="NSColor" red="0.94901960784313721" green="0.30196078431372547" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                            <font key="NSFont" metaFont="system" size="60"/>
+                                            <paragraphStyle key="NSParagraphStyle" alignment="center" lineBreakMode="wordWrapping" baseWritingDirection="natural" tighteningFactorForTruncation="0.0" allowsDefaultTighteningForTruncation="NO"/>
+                                        </attributes>
+                                    </fragment>
+                                    <fragment content="T">
+                                        <attributes>
+                                            <color key="NSColor" red="0.94901960784313721" green="1" blue="0.070588235294117646" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                            <font key="NSFont" metaFont="system" size="60"/>
+                                            <paragraphStyle key="NSParagraphStyle" alignment="center" lineBreakMode="wordWrapping" baseWritingDirection="natural" tighteningFactorForTruncation="0.0" allowsDefaultTighteningForTruncation="NO"/>
+                                        </attributes>
+                                    </fragment>
+                                </attributedString>
+                                <color key="highlightedColor" red="0.94901960784313721" green="1" blue="0.070588235294117646" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                            </label>
                         </subviews>
                         <color key="backgroundColor" red="0.12637259066104889" green="0.12639245390892029" blue="0.12636536359786987" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
@@ -553,10 +572,12 @@
                             <constraint firstItem="yUv-Zs-p46" firstAttribute="bottom" secondItem="L1q-3I-Ldj" secondAttribute="bottom" id="N3X-ZP-zlc"/>
                             <constraint firstItem="wYl-KU-tmF" firstAttribute="centerY" secondItem="1Qw-dI-Gj7" secondAttribute="centerY" id="NSv-UP-qo5"/>
                             <constraint firstItem="L1q-3I-Ldj" firstAttribute="centerX" secondItem="u2d-2r-Wuc" secondAttribute="centerX" id="TUQ-SX-7W1"/>
-                            <constraint firstItem="ssJ-vx-BYE" firstAttribute="top" relation="greaterThanOrEqual" secondItem="aCA-3P-6hy" secondAttribute="bottom" constant="60" id="Uyf-RN-r6m"/>
-                            <constraint firstItem="ssJ-vx-BYE" firstAttribute="centerX" secondItem="u2d-2r-Wuc" secondAttribute="centerX" id="YZX-5I-8hD"/>
+                            <constraint firstItem="GCv-oI-Gdf" firstAttribute="top" secondItem="ssJ-vx-BYE" secondAttribute="bottom" constant="8" id="e9P-Mj-MDg"/>
+                            <constraint firstItem="ssJ-vx-BYE" firstAttribute="top" secondItem="aCA-3P-6hy" secondAttribute="bottom" constant="16" id="fTD-zN-C3F"/>
+                            <constraint firstItem="ssJ-vx-BYE" firstAttribute="centerX" secondItem="u2d-2r-Wuc" secondAttribute="centerX" id="fan-fE-dSZ"/>
                             <constraint firstItem="Ouc-N4-Uxd" firstAttribute="width" secondItem="u2d-2r-Wuc" secondAttribute="width" id="go7-FB-vOV"/>
                             <constraint firstItem="Ouc-N4-Uxd" firstAttribute="centerX" secondItem="u2d-2r-Wuc" secondAttribute="centerX" id="hd1-pL-MJd"/>
+                            <constraint firstItem="GCv-oI-Gdf" firstAttribute="centerX" secondItem="ssJ-vx-BYE" secondAttribute="centerX" id="hm3-sL-Uc1"/>
                             <constraint firstItem="Ouc-N4-Uxd" firstAttribute="centerY" secondItem="u2d-2r-Wuc" secondAttribute="centerY" constant="-20" id="lgL-ab-ZhH"/>
                             <constraint firstItem="xp9-Qz-TRA" firstAttribute="centerY" secondItem="u2d-2r-Wuc" secondAttribute="centerY" constant="-20" id="lku-aL-r1u"/>
                             <constraint firstItem="xp9-Qz-TRA" firstAttribute="centerX" secondItem="u2d-2r-Wuc" secondAttribute="centerX" id="mMB-sZ-NwS"/>
@@ -572,6 +593,7 @@
                         <outlet property="addBut" destination="wYl-KU-tmF" id="NvO-WM-fD5"/>
                         <outlet property="album" destination="xp9-Qz-TRA" id="70U-hv-1MX"/>
                         <outlet property="fotoSize" destination="5f0-ZN-NpT" id="gaf-Ff-rUL"/>
+                        <outlet property="hhud" destination="GCv-oI-Gdf" id="pCs-jL-9VI"/>
                         <outlet property="onOff" destination="L1q-3I-Ldj" id="zil-qY-MV6"/>
                         <outlet property="passSW" destination="yUv-Zs-p46" id="GrA-3F-faH"/>
                         <outlet property="petName" destination="HKB-Qh-ELR" id="lTR-i5-La5"/>
@@ -581,7 +603,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Dbe-lc-Fw6" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-13779.710144927538" y="1722.554347826087"/>
+            <point key="canvasLocation" x="-13780" y="1722.1889055472266"/>
         </scene>
         <!--PetInfo-->
         <scene sceneID="Beb-bD-xeM">
@@ -2031,6 +2053,14 @@
                                     <action selector="statusMgr:" destination="6Y2-Qu-IYJ" eventType="touchUpInside" id="WVo-j8-nlW"/>
                                 </connections>
                             </button>
+                            <imageView hidden="YES" userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="5iZ-XO-zO1">
+                                <rect key="frame" x="163" y="71" width="62" height="33"/>
+                                <color key="backgroundColor" red="0.99956053495407104" green="0.49665415287017822" blue="0.54543310403823853" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="62" id="ffs-Xu-31l"/>
+                                    <constraint firstAttribute="height" constant="33" id="nyF-Th-8RM"/>
+                                </constraints>
+                            </imageView>
                         </subviews>
                         <color key="backgroundColor" red="0.12637259070000001" green="0.12639245390000001" blue="0.1263653636" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
@@ -2079,11 +2109,13 @@
                             <constraint firstItem="XYa-6x-ncI" firstAttribute="centerY" secondItem="1Zu-uX-1yq" secondAttribute="centerY" id="g8y-bc-LNt"/>
                             <constraint firstItem="mey-Po-4Ka" firstAttribute="leading" secondItem="pJ9-NB-5vw" secondAttribute="leading" id="gy3-mn-bqn"/>
                             <constraint firstItem="pJ9-NB-5vw" firstAttribute="leading" secondItem="1Zu-uX-1yq" secondAttribute="leading" id="hAM-oR-h94"/>
+                            <constraint firstItem="5iZ-XO-zO1" firstAttribute="centerX" secondItem="i0B-Cj-EsU" secondAttribute="centerX" id="hFE-Xx-2Vq"/>
                             <constraint firstItem="zXB-rV-mgN" firstAttribute="trailing" secondItem="ZHo-EJ-63u" secondAttribute="trailing" id="jZ9-JB-aUw"/>
                             <constraint firstItem="pI8-Mv-DFb" firstAttribute="leading" secondItem="0BF-at-TCr" secondAttribute="trailing" constant="8" id="je1-9h-hoi"/>
                             <constraint firstItem="1Zu-uX-1yq" firstAttribute="top" secondItem="pJ9-NB-5vw" secondAttribute="bottom" constant="3" id="kV3-e1-3bs"/>
                             <constraint firstItem="1Zu-uX-1yq" firstAttribute="leading" secondItem="tIq-EQ-re7" secondAttribute="trailing" constant="3" id="lom-lW-PBX"/>
                             <constraint firstItem="RbU-ow-msi" firstAttribute="top" secondItem="O4Q-zJ-Lw2" secondAttribute="bottom" constant="3" id="m28-Xb-0YD"/>
+                            <constraint firstItem="5iZ-XO-zO1" firstAttribute="top" secondItem="i0B-Cj-EsU" secondAttribute="bottom" constant="2" id="mL0-h7-VkL"/>
                             <constraint firstItem="QqG-kI-kAS" firstAttribute="centerY" secondItem="PDA-F4-wlq" secondAttribute="centerY" constant="-30" id="mht-60-ebP"/>
                             <constraint firstItem="s02-sA-KUE" firstAttribute="top" secondItem="E0O-Ag-4oI" secondAttribute="bottom" constant="12" id="nHF-xz-DZp"/>
                             <constraint firstItem="ZHo-EJ-63u" firstAttribute="width" secondItem="pI8-Mv-DFb" secondAttribute="width" id="oQ5-fe-3JO"/>
@@ -2114,6 +2146,7 @@
                         <outlet property="costoDia" destination="zXB-rV-mgN" id="lfo-TL-9RN"/>
                         <outlet property="costoMes" destination="ZHo-EJ-63u" id="fBs-c0-oWI"/>
                         <outlet property="dayName" destination="OuD-xr-wp9" id="tsB-CO-JOV"/>
+                        <outlet property="hhud" destination="5iZ-XO-zO1" id="E2I-jz-dG0"/>
                         <outlet property="kwhDia" destination="mey-Po-4Ka" id="Y48-er-vOK"/>
                         <outlet property="kwhMes" destination="pJ9-NB-5vw" id="CgV-dC-hwS"/>
                         <outlet property="l12" destination="FIV-2y-mlS" id="rNK-pD-Jrx"/>
@@ -2134,7 +2167,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="goJ-cr-vUk" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-13063.76811594203" y="1734.7826086956522"/>
+            <point key="canvasLocation" x="-13064.799999999999" y="1734.7826086956522"/>
         </scene>
         <!--ResetVC-->
         <scene sceneID="fKL-ud-mFz">
@@ -2280,14 +2313,24 @@
                                 <color key="textColor" red="1" green="0.05031845771" blue="0.065285403219999996" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <nil key="highlightedColor"/>
                             </label>
+                            <imageView hidden="YES" userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="LZS-KY-7sk">
+                                <rect key="frame" x="77" y="140" width="66" height="35"/>
+                                <color key="backgroundColor" red="0.60288316011428833" green="0.66559571027755737" blue="0.85216015577316284" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="66" id="Hxz-AX-OGZ"/>
+                                    <constraint firstAttribute="height" constant="35" id="zfR-gN-WaX"/>
+                                </constraints>
+                            </imageView>
                         </subviews>
                         <color key="backgroundColor" red="0.111818932" green="0.11183650050000001" blue="0.1118125319" alpha="1" colorSpace="calibratedRGB"/>
                         <constraints>
+                            <constraint firstItem="LZS-KY-7sk" firstAttribute="top" secondItem="xRk-a7-IXE" secondAttribute="bottom" id="0EB-W7-Lli"/>
                             <constraint firstItem="2CA-KZ-qCK" firstAttribute="leading" secondItem="aa5-pN-GkK" secondAttribute="trailing" constant="8" id="10j-cK-7rB"/>
                             <constraint firstItem="hDb-vY-ixm" firstAttribute="top" secondItem="RIx-9V-gig" secondAttribute="bottom" constant="104" id="1hu-Sj-wgb"/>
                             <constraint firstItem="hDb-vY-ixm" firstAttribute="centerX" secondItem="RIx-9V-gig" secondAttribute="centerX" id="4T2-Tv-bDQ"/>
                             <constraint firstItem="rxE-rN-Gd8" firstAttribute="top" secondItem="a90-4K-Zsa" secondAttribute="bottom" constant="-25" id="7H7-3y-AnM"/>
                             <constraint firstItem="aa5-pN-GkK" firstAttribute="leading" secondItem="ubL-3E-7hk" secondAttribute="trailing" constant="21" id="90b-EX-l7f"/>
+                            <constraint firstItem="LZS-KY-7sk" firstAttribute="centerX" secondItem="xRk-a7-IXE" secondAttribute="centerX" id="CeQ-Qa-KVA"/>
                             <constraint firstItem="Ch7-Up-nXQ" firstAttribute="top" secondItem="l7p-Yi-EXm" secondAttribute="bottom" constant="16" id="EaG-aL-oP8"/>
                             <constraint firstItem="Bna-8j-1xp" firstAttribute="top" secondItem="xRk-a7-IXE" secondAttribute="bottom" constant="66" id="Gbc-aD-nai"/>
                             <constraint firstItem="a90-4K-Zsa" firstAttribute="centerX" secondItem="rxE-rN-Gd8" secondAttribute="centerX" constant="-125" id="I9h-fy-owc"/>
@@ -2317,6 +2360,7 @@
                         <outlet property="bffIcon" destination="Ch7-Up-nXQ" id="7eZ-ls-0V2"/>
                         <outlet property="dispSlider" destination="aa5-pN-GkK" id="stM-cL-bqO"/>
                         <outlet property="dispT" destination="2CA-KZ-qCK" id="U2v-ZZ-Wr8"/>
+                        <outlet property="hhud" destination="LZS-KY-7sk" id="GWp-bZ-95Y"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="nn7-e8-tSC" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -2452,6 +2496,14 @@
                                     <action selector="update:" destination="n6i-l3-pur" eventType="touchUpInside" id="gOp-wQ-6Ry"/>
                                 </connections>
                             </button>
+                            <imageView hidden="YES" userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="Zgi-fY-uW7">
+                                <rect key="frame" x="137" y="140" width="54" height="29"/>
+                                <color key="backgroundColor" red="0.20472180843353271" green="0.73883378505706787" blue="0.59871649742126465" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="29" id="Ban-Ka-eHu"/>
+                                    <constraint firstAttribute="width" constant="54" id="Pgk-XH-cQK"/>
+                                </constraints>
+                            </imageView>
                         </subviews>
                         <color key="backgroundColor" red="0.111818932" green="0.11183650050000001" blue="0.1118125319" alpha="1" colorSpace="calibratedRGB"/>
                         <constraints>
@@ -2462,8 +2514,10 @@
                             <constraint firstItem="mMw-yC-PvW" firstAttribute="leading" secondItem="4vg-GK-gBV" secondAttribute="trailing" constant="22" id="CGI-rf-XdP"/>
                             <constraint firstItem="mMw-yC-PvW" firstAttribute="centerY" secondItem="4vg-GK-gBV" secondAttribute="centerY" constant="1.5" id="CzZ-vp-ufZ"/>
                             <constraint firstItem="5Om-wE-WKv" firstAttribute="centerY" secondItem="cAU-QS-92o" secondAttribute="centerY" id="DLT-Yo-Her"/>
+                            <constraint firstItem="Zgi-fY-uW7" firstAttribute="top" secondItem="jO4-uZ-rVj" secondAttribute="bottom" constant="0.5" id="EcD-9k-2Q8"/>
                             <constraint firstItem="KF8-yK-enW" firstAttribute="top" secondItem="jO4-uZ-rVj" secondAttribute="bottom" constant="126" id="KsL-xX-EdX"/>
                             <constraint firstAttribute="trailingMargin" secondItem="4EY-NN-qMH" secondAttribute="trailing" id="QiZ-57-InG"/>
+                            <constraint firstItem="Zgi-fY-uW7" firstAttribute="trailing" secondItem="jO4-uZ-rVj" secondAttribute="trailing" id="TDS-VX-JJj"/>
                             <constraint firstItem="jO4-uZ-rVj" firstAttribute="top" secondItem="Kxx-pG-h8t" secondAttribute="bottom" constant="39.5" id="aoN-kp-F3g"/>
                             <constraint firstItem="eD2-pe-pSC" firstAttribute="top" secondItem="8bj-TW-cKk" secondAttribute="bottom" constant="4" id="dZv-tg-KcJ"/>
                             <constraint firstItem="5Om-wE-WKv" firstAttribute="trailing" secondItem="4vg-GK-gBV" secondAttribute="trailing" id="ecg-iC-KXC"/>
@@ -2481,6 +2535,7 @@
                     </view>
                     <connections>
                         <outlet property="bffIcon" destination="4EY-NN-qMH" id="CIz-7N-8lC"/>
+                        <outlet property="hhud" destination="Zgi-fY-uW7" id="HZs-zN-lOt"/>
                         <outlet property="meterid" destination="8bj-TW-cKk" id="B8f-w8-rxE"/>
                         <outlet property="port" destination="cAU-QS-92o" id="XP0-ic-UDI"/>
                         <outlet property="server" destination="mMw-yC-PvW" id="7G4-Jb-2Xr"/>
@@ -2489,7 +2544,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="bhm-Cs-lEs" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-17138" y="1721"/>
+            <point key="canvasLocation" x="-17138.400000000001" y="1720.3898050974515"/>
         </scene>
         <!--Item-->
         <scene sceneID="S0i-Fw-D4F">
@@ -2662,13 +2717,23 @@
                                     <constraint firstAttribute="width" constant="78" id="mw2-wO-lcA"/>
                                 </constraints>
                             </imageView>
+                            <imageView hidden="YES" userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="L8k-Ok-s8T">
+                                <rect key="frame" x="56" y="86.5" width="47" height="25"/>
+                                <color key="backgroundColor" red="0.99955576658248901" green="0.14874225854873657" blue="0.34538149833679199" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="25" id="Xk2-s8-AjU"/>
+                                    <constraint firstAttribute="width" constant="47" id="bD0-3A-qoq"/>
+                                </constraints>
+                            </imageView>
                         </subviews>
                         <color key="backgroundColor" white="0.0" alpha="1" colorSpace="calibratedWhite"/>
                         <constraints>
                             <constraint firstItem="9wV-3b-fAu" firstAttribute="centerX" secondItem="JdM-th-aPg" secondAttribute="centerX" constant="-9" id="5Zl-uA-CXA"/>
                             <constraint firstItem="QVr-BS-rfU" firstAttribute="top" secondItem="hVQ-hv-34j" secondAttribute="bottom" constant="74" id="6Qn-zq-zBE"/>
                             <constraint firstItem="QVr-BS-rfU" firstAttribute="centerX" secondItem="JdM-th-aPg" secondAttribute="centerX" id="6fw-bh-sIe"/>
+                            <constraint firstItem="9wV-3b-fAu" firstAttribute="leading" secondItem="L8k-Ok-s8T" secondAttribute="trailing" constant="-11.5" id="9zC-ev-4AS"/>
                             <constraint firstItem="W3Q-hi-1Kv" firstAttribute="top" secondItem="hVQ-hv-34j" secondAttribute="bottom" constant="2" id="MOe-zX-34F"/>
+                            <constraint firstItem="L8k-Ok-s8T" firstAttribute="centerY" secondItem="9wV-3b-fAu" secondAttribute="centerY" id="Yaq-VV-s01"/>
                             <constraint firstAttribute="trailingMargin" secondItem="W3Q-hi-1Kv" secondAttribute="trailing" constant="-8" id="cHt-C0-mPl"/>
                             <constraint firstAttribute="trailingMargin" secondItem="QVr-BS-rfU" secondAttribute="trailing" constant="-16" id="gAh-XO-m8D"/>
                             <constraint firstItem="QVr-BS-rfU" firstAttribute="centerY" secondItem="JdM-th-aPg" secondAttribute="centerY" constant="44.5" id="gtp-2K-Dbv"/>
@@ -2680,12 +2745,13 @@
                     <navigationItem key="navigationItem" id="k2P-ZJ-mNT"/>
                     <connections>
                         <outlet property="bffIcon" destination="W3Q-hi-1Kv" id="GxZ-oR-g0a"/>
+                        <outlet property="hhud" destination="L8k-Ok-s8T" id="jcB-5N-bw1"/>
                         <outlet property="table" destination="19F-pw-hc2" id="OzQ-5v-nIO"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="w1h-Nn-rmq" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-14444" y="1720"/>
+            <point key="canvasLocation" x="-14444" y="1719.4902548725638"/>
         </scene>
     </scenes>
     <resources>
@@ -2714,6 +2780,6 @@
         <image name="unlocked" width="128" height="128"/>
     </resources>
     <inferredMetricsTieBreakers>
-        <segue reference="g1r-Dh-xUs"/>
+        <segue reference="vRd-ff-DbK"/>
     </inferredMetricsTieBreakers>
 </document>

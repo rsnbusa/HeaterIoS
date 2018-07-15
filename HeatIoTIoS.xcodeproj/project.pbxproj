@@ -29,6 +29,7 @@
 		6785BA521D82EA52003297E0 /* tabc.m in Sources */ = {isa = PBXBuildFile; fileRef = 6785BA511D82EA52003297E0 /* tabc.m */; };
 		678A9F061D3DDBFB00FA6031 /* blurLabel.m in Sources */ = {isa = PBXBuildFile; fileRef = 678A9F051D3DDBFB00FA6031 /* blurLabel.m */; };
 		6791328D1D67C4AF00D448A0 /* queueEntry.m in Sources */ = {isa = PBXBuildFile; fileRef = 6791328C1D67C4AF00D448A0 /* queueEntry.m */; };
+		6797063820FBD3B50039EA3F /* AMTumblrHud.m in Sources */ = {isa = PBXBuildFile; fileRef = 6797063720FBD3B40039EA3F /* AMTumblrHud.m */; };
 		679809641C89CF83006ED86F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 679809631C89CF83006ED86F /* LaunchScreen.storyboard */; };
 		6798219B1C9ADD79002C80E7 /* HMSegmentedControl.m in Sources */ = {isa = PBXBuildFile; fileRef = 6798219A1C9ADD79002C80E7 /* HMSegmentedControl.m */; };
 		679821A11C9B0AB7002C80E7 /* servingCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 679821A01C9B0AB7002C80E7 /* servingCell.m */; };
@@ -135,6 +136,8 @@
 		678A9F051D3DDBFB00FA6031 /* blurLabel.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = blurLabel.m; sourceTree = "<group>"; };
 		6791328B1D67C4AF00D448A0 /* queueEntry.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = queueEntry.h; path = ../queueEntry.h; sourceTree = "<group>"; };
 		6791328C1D67C4AF00D448A0 /* queueEntry.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = queueEntry.m; path = ../queueEntry.m; sourceTree = "<group>"; };
+		6797063620FBD3B40039EA3F /* AMTumblrHud.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AMTumblrHud.h; sourceTree = "<group>"; };
+		6797063720FBD3B40039EA3F /* AMTumblrHud.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AMTumblrHud.m; sourceTree = "<group>"; };
 		679809631C89CF83006ED86F /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		679821991C9ADD79002C80E7 /* HMSegmentedControl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = HMSegmentedControl.h; sourceTree = "<group>"; };
 		6798219A1C9ADD79002C80E7 /* HMSegmentedControl.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = HMSegmentedControl.m; sourceTree = "<group>"; };
@@ -213,7 +216,7 @@
 		67E1FEA31CA8497200DEAAA2 /* wifiCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = wifiCell.m; sourceTree = "<group>"; };
 		67F46E801CD24931003847D7 /* emailCellTableViewCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = emailCellTableViewCell.h; sourceTree = "<group>"; };
 		67F46E811CD24931003847D7 /* emailCellTableViewCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = emailCellTableViewCell.m; sourceTree = "<group>"; };
-		72EC05B317E8DF3D00DCB9A3 /* HeatIoT.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HeatIoT.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		72EC05B317E8DF3D00DCB9A3 /* HeatIoT.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = HeatIoT.app; path = HeatIoTIoS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		72EC05BE17E8DF3D00DCB9A3 /* HeatIoTIoS-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "HeatIoTIoS-Info.plist"; sourceTree = "<group>"; };
 		72EC05C017E8DF3D00DCB9A3 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		72EC05C217E8DF3D00DCB9A3 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
@@ -445,6 +448,8 @@
 		72EC05BC17E8DF3D00DCB9A3 /* Heatiot */ = {
 			isa = PBXGroup;
 			children = (
+				6797063620FBD3B40039EA3F /* AMTumblrHud.h */,
+				6797063720FBD3B40039EA3F /* AMTumblrHud.m */,
 				677C01A51CD450C9008533BE /* albumVC.h */,
 				677C01A61CD450C9008533BE /* albumVC.m */,
 				72EC05C517E8DF3D00DCB9A3 /* AppDelegate.h */,
@@ -674,6 +679,7 @@
 				679821A11C9B0AB7002C80E7 /* servingCell.m in Sources */,
 				67C175711C89B53D00AE6CA7 /* CEPinchInteractionController.m in Sources */,
 				67C7A86D1D6A14B100BC06C2 /* will_mosq.c in Sources */,
+				6797063820FBD3B50039EA3F /* AMTumblrHud.m in Sources */,
 				67C7A85F1D6A14B100BC06C2 /* logging_mosq.c in Sources */,
 				67C7A8611D6A14B100BC06C2 /* messages_mosq.c in Sources */,
 				677CA3E31D298BD100EA64CF /* logCell.m in Sources */,

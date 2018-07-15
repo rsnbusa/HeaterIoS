@@ -18,6 +18,50 @@
 
 id yo;
 
+-(void)killBill
+{
+    if(tumblrHUD)
+        [tumblrHUD hide];
+    [self showMessage:@"Meter Msg" withMessage:@"Comm Timeout"];
+}
+
+-(void)hud
+{
+    dispatch_async(dispatch_get_main_queue(), ^{
+        tumblrHUD = [[AMTumblrHud alloc] initWithFrame:CGRectMake((CGFloat) (_hhud.frame.origin.x),
+                                                                  (CGFloat) (_hhud.frame.origin.y), 55, 20)];
+        tumblrHUD.hudColor = _hhud.backgroundColor;
+        [self.view addSubview:tumblrHUD];
+        [tumblrHUD showAnimated:YES];
+        mitimer=[NSTimer scheduledTimerWithTimeInterval:10
+                                                 target:self
+                                               selector:@selector(killBill)
+                                               userInfo:nil
+                                                repeats:NO];
+    });
+}
+
+
+-(void)showMessage:(NSString*)title withMessage:(NSString*)que
+{
+    if(mitimer)
+        [mitimer invalidate];
+    dispatch_async(dispatch_get_main_queue(), ^{[tumblrHUD hide]; });
+    
+    UIAlertController* alert = [UIAlertController alertControllerWithTitle:title
+                                                                   message:que
+                                                            preferredStyle:UIAlertControllerStyleAlert];
+    UIAlertAction* defaultAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault
+                                                          handler:^(UIAlertAction * action) {
+                                                          }];
+    
+    [alert addAction:defaultAction];
+    [self presentViewController:alert animated:YES completion:nil];
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [alert dismissViewControllerAnimated:YES completion:nil];
+    });
+}
+
 -(void)workingIcon
 {
     UIImage *licon;
@@ -62,6 +106,8 @@ id yo;
 -(void)showlog:(NSData *)data
 {
 //    NSLog(@"Datos:%@ len %u",data,(unsigned long)data.length);
+    if(mitimer)
+        [mitimer invalidate];
     uint16_t desde,len,codeid;
     NSRange rango=NSMakeRange(0, 2);
     [data getBytes:&codeid range:rango];
@@ -112,6 +158,7 @@ MQTTMessageHandler llog=^(MQTTMessage *message)
     }
     [entries removeAllObjects];
     [super viewDidAppear:animated];
+    [self hud];
     [comm lsender:@"readlog?password=zipo" andAnswer:NULL andTimeOut:2 vcController:self];
 }
 
@@ -126,6 +173,12 @@ MQTTMessageHandler llog=^(MQTTMessage *message)
     // Dispose of any resources that can be recreated.
 }
 
+-(void) tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    if([indexPath row] == entries.count-1){
+        dispatch_async(dispatch_get_main_queue(), ^{[tumblrHUD hide]; });
+    }
+}
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
 {
     return entries.count;

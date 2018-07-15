@@ -29,6 +29,29 @@ id yo,app;
 //#define kWh 0.1232f
 #define consumoHora 1.0
 
+-(void)killBill
+{
+    if(tumblrHUD)
+        [tumblrHUD hide];
+    [self showMessage:@"HeatIoT Msg" withMessage:@"Comm Timeout"];
+}
+
+-(void)hud
+{
+    dispatch_async(dispatch_get_main_queue(), ^{
+        tumblrHUD = [[AMTumblrHud alloc] initWithFrame:CGRectMake((CGFloat) (_hhud.frame.origin.x),
+                                                                  (CGFloat) (_hhud.frame.origin.y), 55, 20)];
+        tumblrHUD.hudColor = _hhud.backgroundColor;
+        [self.view addSubview:tumblrHUD];
+        [tumblrHUD showAnimated:YES];
+        mitimer=[NSTimer scheduledTimerWithTimeInterval:10
+                                                 target:self
+                                               selector:@selector(killBill)
+                                               userInfo:nil
+                                                repeats:NO];
+    });
+}
+
 -(void)showErrorMessage
 {
     UIAlertController* alert = [UIAlertController alertControllerWithTitle:@"TimeOut"
@@ -59,6 +82,10 @@ id yo,app;
 
 -(void)showMessage:(NSString*)title withMessage:(NSString*)que
 {
+    if(mitimer)
+        [mitimer invalidate];
+    dispatch_async(dispatch_get_main_queue(), ^{ [tumblrHUD hide];});
+    
     UIAlertController* alert = [UIAlertController alertControllerWithTitle:title
                                                                    message:que
                                                             preferredStyle:UIAlertControllerStyleAlert];
@@ -92,6 +119,7 @@ id yo,app;
         viejo=appDelegate.client.messageHandler;
         [appDelegate.client setMessageHandler:NULL];//nada
     }
+    [self hud];
     [comm lsender:mis andAnswer:NULL andTimeOut:[[[NSUserDefaults standardUserDefaults]objectForKey:@"txTimeOut"] intValue] vcController:self];
     
 }
@@ -222,7 +250,6 @@ backGroundBlurr.frame = CGRectMake(0, 0, screenSize.size.width, screenSize.size.
 
 - (void)delete
 {
-    [self blurScreen];
     
     UIAlertController* alert = [UIAlertController alertControllerWithTitle:@"Delete Timer"
                                                                    message:@"Please Confirm delete"
@@ -242,6 +269,7 @@ backGroundBlurr.frame = CGRectMake(0, 0, screenSize.size.width, screenSize.size.
                                                                   viejo=appDelegate.client.messageHandler;
                                                                   [appDelegate.client setMessageHandler:generalAnswer];
                                                               }
+                                                              [self hud];
                                                              [comm lsender:mis andAnswer:NULL andTimeOut:[[[NSUserDefaults standardUserDefaults]objectForKey:@"txTimeOut"] intValue] vcController:self];
                                                               globalSlice=0;
                                                               [self makePie];
@@ -249,7 +277,6 @@ backGroundBlurr.frame = CGRectMake(0, 0, screenSize.size.width, screenSize.size.
                                                           }];
     UIAlertAction* cancelAction = [UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleDefault
                                                           handler:^(UIAlertAction * action) {
-                                                              [backGroundBlurr removeFromSuperview];
                                                           }];
     
     [alert addAction:defaultAction];
@@ -363,6 +390,11 @@ backGroundBlurr.frame = CGRectMake(0, 0, screenSize.size.width, screenSize.size.
     NSArray *partes;
     NSString *tmph;
     BOOL refreshf,waterf=NO;
+
+    if(mitimer)
+        [mitimer invalidate];
+    dispatch_async(dispatch_get_main_queue(), ^{ [tumblrHUD hide];});
+    
     if(appDelegate.client)
         [appDelegate.client setMessageHandler:viejo];
     
@@ -699,7 +731,7 @@ MQTTMessageHandler generalAnswer=^(MQTTMessage *message)
             viejo=appDelegate.client.messageHandler;
             [appDelegate.client setMessageHandler:reloj];
         }
-        
+        [self hud];
         [comm lsender:mis andAnswer:NULL andTimeOut:2 vcController:self];
     }
 }
@@ -949,6 +981,7 @@ MQTTMessageHandler generalAnswer=^(MQTTMessage *message)
         [appDelegate.client setMessageHandler:generalAnswer];
     }
     mis=[NSString stringWithFormat:@"manual?st=1"];
+    [self hud];
    [comm lsender:mis andAnswer:NULL andTimeOut:[[[NSUserDefaults standardUserDefaults]objectForKey:@"txTimeOut"] intValue] vcController:self];
  
 
@@ -967,6 +1000,7 @@ MQTTMessageHandler generalAnswer=^(MQTTMessage *message)
         [appDelegate.client setMessageHandler:generalAnswer];
     }
     mis=[NSString stringWithFormat:@"manual?st=0"];
+    [self hud];
    [comm lsender:mis andAnswer:NULL andTimeOut:[[[NSUserDefaults standardUserDefaults]objectForKey:@"txTimeOut"] intValue] vcController:self];
 
 }
@@ -989,7 +1023,7 @@ MQTTMessageHandler generalAnswer=^(MQTTMessage *message)
         [appDelegate.client setMessageHandler:generalAnswer];
     }
     mis=[NSString stringWithFormat:@"timerOnOff?pos=%d&st=%d&name=%@",cual,estado,[[appDelegate.servingsArray objectAtIndex:cual] valueForKey:@"servName"]];
-
+    [self hud];
     [comm lsender:mis andAnswer:NULL andTimeOut:[[[NSUserDefaults standardUserDefaults]objectForKey:@"txTimeOut"] intValue] vcController:self];
   
 }
@@ -1068,6 +1102,7 @@ MQTTMessageHandler generalAnswer=^(MQTTMessage *message)
         viejo=appDelegate.client.messageHandler;
         [appDelegate.client setMessageHandler:generalAnswer];
     }
+    [self hud];
     [comm lsender:mis andAnswer:NULL andTimeOut:[[[NSUserDefaults standardUserDefaults]objectForKey:@"txTimeOut"] intValue] vcController:self];
   
     NSError *error;
@@ -1138,48 +1173,14 @@ MQTTMessageHandler generalAnswer=^(MQTTMessage *message)
     [context save:&error];
 }
 */
--(void)getTimersHeater
+-(void)setTimers:(NSString *)lanswer
 {
-    NSString *lanswer;
     NSDateComponents *comps;
     NSCalendar *calendar;
-    
-    NSEntityDescription *entityDesc =
-    [NSEntityDescription entityForName:@"Servings"
-                inManagedObjectContext:context];
-    
-    NSFetchRequest *request = [[NSFetchRequest alloc] init];
-    [request setEntity:entityDesc];
-    
-    NSSortDescriptor *sortDescriptor = [[NSSortDescriptor alloc] initWithKey:@"servDate" ascending:YES];
-    NSArray *sortDescriptors = [NSArray arrayWithObject:sortDescriptor];
-    [request setSortDescriptors:sortDescriptors];
-    NSPredicate *predicate = [NSPredicate predicateWithFormat:@"%K == %@", @"servBFFName", [appDelegate.workingBFF valueForKey:@"bffName"]];
-    [request setPredicate:predicate];
     NSError *error;
-    NSArray *estosServings = [[context executeFetchRequest:request error:&error] mutableCopy];
-    for (NSManagedObject *item in estosServings) {
-        [context deleteObject:item];
-    }
-    if(![context save:&error])
-    {
-        LogDebug(@"Save error GetTimers %@",error);
-        return;//if we cant save it return and dont send anything toi the esp8266
-    }
- 
-    calendar = [[NSCalendar alloc]
-                initWithCalendarIdentifier:NSGregorianCalendar];//[NSCalendar currentCalendar];
     
-    mis=[NSString stringWithFormat:@"gettimers"];
-    int reply=[comm lsender:mis andAnswer:&lanswer andTimeOut:[[[NSUserDefaults standardUserDefaults]objectForKey:@"txTimeOut"] intValue] vcController:self];
-    if (!reply)
-    {
-        NSLog(@"No reply");
-        [self showErrorMessage];
-        return;
-    }
     NSMutableSet *serv=[appDelegate.workingBFF mutableSetValueForKey:@"meals"];
-     context =[appDelegate managedObjectContext];
+    context =[appDelegate managedObjectContext];
     // Insert Timers
     NSArray *theTimersString=[lanswer componentsSeparatedByString:@"@"];
     for (int a=0;a<theTimersString.count;a++)
@@ -1198,6 +1199,9 @@ MQTTMessageHandler generalAnswer=^(MQTTMessage *message)
             [self showErrorMessage];
             return;
         }
+        
+        calendar = [[NSCalendar alloc]
+                    initWithCalendarIdentifier:NSGregorianCalendar];//[NSCalendar currentCalendar];
         comps =
         [calendar components:(NSCalendarUnitYear | NSCalendarUnitMonth |  NSCalendarUnitDay | NSCalendarUnitHour | NSCalendarUnitMinute) fromDate:[NSDate date]];
         NSDate *fromDate = [calendar dateFromComponents:comps];
@@ -1222,12 +1226,54 @@ MQTTMessageHandler generalAnswer=^(MQTTMessage *message)
         [newServing setValue: [NSDate date] forKey:@"dateAdded"];
         [serv addObject:newServing];
     }
-
+    
     if(![context save:&error])
-     {
-     LogDebug(@"Save error GetTimers %@",error);
-     return;//if we cant save it return and dont send anything toi the esp8266
-     }
+    {
+        LogDebug(@"Save error GetTimers %@",error);
+        return;//if we cant save it return and dont send anything toi the esp8266
+    }
+}
+
+MQTTMessageHandler timersRx=^(MQTTMessage *message)
+{
+    [yo setCallBackNull];
+    LogDebug(@"Timers %@ %@",message.payload,message.payloadString);
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [yo setTimers:message.payloadString];
+    });
+};
+
+
+-(void)getTimersHeater
+{
+    NSEntityDescription *entityDesc =
+    [NSEntityDescription entityForName:@"Servings"
+                inManagedObjectContext:context];
+    
+    NSFetchRequest *request = [[NSFetchRequest alloc] init];
+    [request setEntity:entityDesc];
+    
+    NSSortDescriptor *sortDescriptor = [[NSSortDescriptor alloc] initWithKey:@"servDate" ascending:YES];
+    NSArray *sortDescriptors = [NSArray arrayWithObject:sortDescriptor];
+    [request setSortDescriptors:sortDescriptors];
+    NSPredicate *predicate = [NSPredicate predicateWithFormat:@"%K == %@", @"servBFFName", [appDelegate.workingBFF valueForKey:@"bffName"]];
+    [request setPredicate:predicate];
+    NSError *error;
+    NSArray *estosServings = [[context executeFetchRequest:request error:&error] mutableCopy];
+    for (NSManagedObject *item in estosServings) {
+        [context deleteObject:item];
+    }
+    if(![context save:&error])
+    {
+        LogDebug(@"Save error GetTimers %@",error);
+        return;//if we cant save it return and dont send anything toi the esp8266
+    }
+ 
+    if(appDelegate.client)
+        [appDelegate.client setMessageHandler:timersRx];
+    mis=[NSString stringWithFormat:@"gettimers"];
+    [self hud];
+    [comm lsender:mis andAnswer:NULL andTimeOut:[[[NSUserDefaults standardUserDefaults]objectForKey:@"txTimeOut"] intValue] vcController:self];
 
 }
 

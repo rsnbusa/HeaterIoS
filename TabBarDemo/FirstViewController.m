@@ -41,14 +41,27 @@
 @synthesize host,answer,effects,petName,collect,picScroll,mqttServer,album,fotoSize,onOff,netServiceBrowser,passSW,addBut;
 id yo;
 
--(void)blurScreen
+-(void)killBill
 {
-    CGRect screenSize = [UIScreen mainScreen].bounds;
-    UIImage *screenShot = [self.view screenshot];
-    UIImage *blurImage  = [screenShot blurredImageWithRadius:10.5 iterations:2 tintColor:nil];
-    backGroundBlurr = [[UIImageView alloc]initWithImage:blurImage];
-    backGroundBlurr.frame = CGRectMake(0, 0, screenSize.size.width, screenSize.size.height);
-    [self.view addSubview:backGroundBlurr];
+    if(tumblrHUD)
+        [tumblrHUD hide];
+    [self showMensaje:@"Meter Msg" withMessage:@"Comm Timeout" doExit:NO];
+}
+
+-(void)hud
+{
+    dispatch_async(dispatch_get_main_queue(), ^{
+        tumblrHUD = [[AMTumblrHud alloc] initWithFrame:CGRectMake((CGFloat) (_hhud.frame.origin.x),
+                                                                  (CGFloat) (_hhud.frame.origin.y), 55, 20)];
+        tumblrHUD.hudColor = _hhud.backgroundColor;
+        [self.view addSubview:tumblrHUD];
+        [tumblrHUD showAnimated:YES];
+        mitimer=[NSTimer scheduledTimerWithTimeInterval:10
+                                                 target:self
+                                               selector:@selector(killBill)
+                                               userInfo:nil
+                                                repeats:NO];
+    });
 }
 
 -(void)oneTap:(id)sender
@@ -62,23 +75,29 @@ id yo;
 
  -(void)showMensaje:(NSString*)title withMessage:(NSString*)mensaje doExit:(BOOL)salir
 {
-    [self blurScreen];
+    if(mitimer)
+        [mitimer invalidate];
+    dispatch_async(dispatch_get_main_queue(), ^{[tumblrHUD hide]; });
+
     UIAlertController* alert = [UIAlertController alertControllerWithTitle:title
                                                                    message:mensaje
                                                             preferredStyle:UIAlertControllerStyleAlert];
     UIAlertAction* defaultAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault
                                                           handler:^(UIAlertAction * action) {
                                                               [backGroundBlurr removeFromSuperview];
-                                                               if (salir) exit(0);
+                                                            //   if (salir) exit(0);
                                                           }];
     
     [alert addAction:defaultAction];
     [self presentViewController:alert animated:YES completion:nil];
+    if(salir)
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [alert dismissViewControllerAnimated:YES completion:nil];
+    });
 }
 
 -(void)confirmDelete
 {
-    [self blurScreen];
     UIAlertController* alert = [UIAlertController alertControllerWithTitle:@"Delete Heater"
                                                                    message:[NSString stringWithFormat:@"You really want to remove %@",[appDelegate.workingBFF valueForKey:@"bffName"]]
                                                             preferredStyle:UIAlertControllerStyleAlert];
@@ -87,6 +106,7 @@ id yo;
                                                               [backGroundBlurr removeFromSuperview];
                                                               NSString *mis=[NSString stringWithFormat:@"erase?bff=%@&password=zipo",
                                                                                 [appDelegate.workingBFF valueForKey:@"bffName"]];
+                                                              [self hud];
                                                               [comm lsender:mis andAnswer:NULL andTimeOut:[[[NSUserDefaults standardUserDefaults]objectForKey:@"txTimeOut"] intValue]];
                                                               //return;//should be return
                                                               [self deleteAllEntity:@"Emails"];
@@ -132,6 +152,7 @@ id yo;
   //      viejo=appDelegate.client.messageHandler;
         [appDelegate.client setMessageHandler:aca];
     }
+    [self hud];
     [comm lsender:cmd andAnswer:NULL andTimeOut:[[[NSUserDefaults standardUserDefaults]objectForKey:@"txTimeOut"] intValue]];
     [appDelegate.workingBFF setValue:[NSNumber numberWithInteger:cual] forKey:@"bffOnOff"];
     NSError *error;
@@ -199,6 +220,7 @@ id yo;
 //    assert(self.fileStream == nil);         // ditto
     NSString *filef=[NSString stringWithFormat:@"ftp://feediot.co.nf/%@",elNombre];
     NSString *mis=[NSString stringWithFormat:@"image?w=%d&h=%d",w,h];
+    [self hud];
     [comm lsender:mis andAnswer:NULL andTimeOut:[[[NSUserDefaults standardUserDefaults]objectForKey:@"txTimeOut"] intValue] vcController:self];
 
     
@@ -304,11 +326,119 @@ id yo;
     }
 }
 
+- (UIImage *)scaleAndRotateImage:(UIImage *) image {
+    int kMaxResolution = 320;
+    
+    CGImageRef imgRef = image.CGImage;
+    
+    CGFloat width = CGImageGetWidth(imgRef);
+    CGFloat height = CGImageGetHeight(imgRef);
+    
+    
+    CGAffineTransform transform = CGAffineTransformIdentity;
+    CGRect bounds = CGRectMake(0, 0, width, height);
+    if (width > kMaxResolution || height > kMaxResolution) {
+        CGFloat ratio = width/height;
+        if (ratio > 1) {
+            bounds.size.width = kMaxResolution;
+            bounds.size.height = bounds.size.width / ratio;
+        }
+        else {
+            bounds.size.height = kMaxResolution;
+            bounds.size.width = bounds.size.height * ratio;
+        }
+    }
+    
+    CGFloat scaleRatio = bounds.size.width / width;
+    CGSize imageSize = CGSizeMake(CGImageGetWidth(imgRef), CGImageGetHeight(imgRef));
+    CGFloat boundHeight;
+    UIImageOrientation orient = image.imageOrientation;
+    switch(orient) {
+            
+        case UIImageOrientationUp: //EXIF = 1
+            transform = CGAffineTransformIdentity;
+            break;
+            
+        case UIImageOrientationUpMirrored: //EXIF = 2
+            transform = CGAffineTransformMakeTranslation(imageSize.width, 0.0);
+            transform = CGAffineTransformScale(transform, -1.0, 1.0);
+            break;
+            
+        case UIImageOrientationDown: //EXIF = 3
+            transform = CGAffineTransformMakeTranslation(imageSize.width, imageSize.height);
+            transform = CGAffineTransformRotate(transform, M_PI);
+            break;
+            
+        case UIImageOrientationDownMirrored: //EXIF = 4
+            transform = CGAffineTransformMakeTranslation(0.0, imageSize.height);
+            transform = CGAffineTransformScale(transform, 1.0, -1.0);
+            break;
+            
+        case UIImageOrientationLeftMirrored: //EXIF = 5
+            boundHeight = bounds.size.height;
+            bounds.size.height = bounds.size.width;
+            bounds.size.width = boundHeight;
+            transform = CGAffineTransformMakeTranslation(imageSize.height, imageSize.width);
+            transform = CGAffineTransformScale(transform, -1.0, 1.0);
+            transform = CGAffineTransformRotate(transform, 3.0 * M_PI / 2.0);
+            break;
+            
+        case UIImageOrientationLeft: //EXIF = 6
+            boundHeight = bounds.size.height;
+            bounds.size.height = bounds.size.width;
+            bounds.size.width = boundHeight;
+            transform = CGAffineTransformMakeTranslation(0.0, imageSize.width);
+            transform = CGAffineTransformRotate(transform, 3.0 * M_PI / 2.0);
+            break;
+            
+        case UIImageOrientationRightMirrored: //EXIF = 7
+            boundHeight = bounds.size.height;
+            bounds.size.height = bounds.size.width;
+            bounds.size.width = boundHeight;
+            transform = CGAffineTransformMakeScale(-1.0, 1.0);
+            transform = CGAffineTransformRotate(transform, M_PI / 2.0);
+            break;
+            
+        case UIImageOrientationRight: //EXIF = 8
+            boundHeight = bounds.size.height;
+            bounds.size.height = bounds.size.width;
+            bounds.size.width = boundHeight;
+            transform = CGAffineTransformMakeTranslation(imageSize.height, 0.0);
+            transform = CGAffineTransformRotate(transform, M_PI / 2.0);
+            break;
+            
+        default:
+            [NSException raise:NSInternalInconsistencyException format:@"Invalid image orientation"];
+            
+    }
+    
+    UIGraphicsBeginImageContext(bounds.size);
+    
+    CGContextRef context = UIGraphicsGetCurrentContext();
+    
+    if (orient == UIImageOrientationRight || orient == UIImageOrientationLeft) {
+        CGContextScaleCTM(context, -scaleRatio, scaleRatio);
+        CGContextTranslateCTM(context, -height, 0);
+    }
+    else {
+        CGContextScaleCTM(context, scaleRatio, -scaleRatio);
+        CGContextTranslateCTM(context, 0, -height);
+    }
+    
+    CGContextConcatCTM(context, transform);
+    
+    CGContextDrawImage(UIGraphicsGetCurrentContext(), CGRectMake(0, 0, width, height), imgRef);
+    UIImage *imageCopy = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    
+    return imageCopy;
+}
+
 - (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary *)info
 {
     //You can retrieve the actual UIImage
     UIImage *estai = [info valueForKey:UIImagePickerControllerOriginalImage];
-    imagel=[UIImage imageWithCGImage:estai.CGImage scale:1.0 orientation:estai.imageOrientation];
+    UIImage *imagel = [self scaleAndRotateImage: [info objectForKey:UIImagePickerControllerOriginalImage]];
     // Create path.
     NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
     NSString *final=[NSString stringWithFormat:@"%@.txt",[appDelegate.workingBFF valueForKey:@"bffName"]];//.txt hasta que tengamos webiste ue nos permita usar .png
@@ -462,115 +592,6 @@ id yo;
 }
 
 
-- (UIImage *)scaleAndRotateImage:(UIImage *)image
-{
-    int kMaxResolution = 320; // Or whatever
-    return image;
-    CGImageRef imgRef = image.CGImage;
-    
-    CGFloat width = CGImageGetWidth(imgRef);
-    CGFloat height = CGImageGetHeight(imgRef);
-    
-    CGAffineTransform transform = CGAffineTransformIdentity;
-    CGRect bounds = CGRectMake(0, 0, width, height);
-    if (width > kMaxResolution || height > kMaxResolution) {
-        CGFloat ratio = width/height;
-        if (ratio > 1) {
-            bounds.size.width = kMaxResolution;
-            bounds.size.height = bounds.size.width / ratio;
-        }
-        else {
-            bounds.size.height = kMaxResolution;
-            bounds.size.width = bounds.size.height * ratio;
-        }
-    }
-    
-    CGFloat scaleRatio = bounds.size.width / width;
-    CGSize imageSize = CGSizeMake(CGImageGetWidth(imgRef), CGImageGetHeight(imgRef));
-    CGFloat boundHeight;
-    UIImageOrientation orient = image.imageOrientation;
-  //  NSLog(@"Orient %ld",(long)orient);
-    switch(orient) {
-            
-        case UIImageOrientationUp: //EXIF = 1
-            transform = CGAffineTransformIdentity;
-            break;
-            
-        case UIImageOrientationUpMirrored: //EXIF = 2
-            transform = CGAffineTransformMakeTranslation(imageSize.width, 0.0);
-            transform = CGAffineTransformScale(transform, -1.0, 1.0);
-            break;
-            
-        case UIImageOrientationDown: //EXIF = 3
-            transform = CGAffineTransformMakeTranslation(imageSize.width, imageSize.height);
-            transform = CGAffineTransformRotate(transform, M_PI);
-            break;
-            
-        case UIImageOrientationDownMirrored: //EXIF = 4
-            transform = CGAffineTransformMakeTranslation(0.0, imageSize.height);
-            transform = CGAffineTransformScale(transform, 1.0, -1.0);
-            break;
-            
-        case UIImageOrientationLeftMirrored: //EXIF = 5
-            boundHeight = bounds.size.height;
-            bounds.size.height = bounds.size.width;
-            bounds.size.width = boundHeight;
-            transform = CGAffineTransformMakeTranslation(imageSize.height, imageSize.width);
-            transform = CGAffineTransformScale(transform, -1.0, 1.0);
-            transform = CGAffineTransformRotate(transform, 3.0 * M_PI / 2.0);
-            break;
-            
-        case UIImageOrientationLeft: //EXIF = 6
-            boundHeight = bounds.size.height;
-            bounds.size.height = bounds.size.width;
-            bounds.size.width = boundHeight;
-            transform = CGAffineTransformMakeTranslation(0.0, imageSize.width);
-            transform = CGAffineTransformRotate(transform, 3.0 * M_PI / 2.0);
-            break;
-            
-        case UIImageOrientationRightMirrored: //EXIF = 7
-            boundHeight = bounds.size.height;
-            bounds.size.height = bounds.size.width;
-            bounds.size.width = boundHeight;
-            transform = CGAffineTransformMakeScale(-1.0, 1.0);
-            transform = CGAffineTransformRotate(transform, M_PI / 2.0);
-            break;
-            
-        case UIImageOrientationRight: //EXIF = 8
-            boundHeight = bounds.size.height;
-            bounds.size.height = bounds.size.width;
-            bounds.size.width = boundHeight;
-            transform = CGAffineTransformMakeTranslation(imageSize.height, 0.0);
-            transform = CGAffineTransformRotate(transform, M_PI / 2.0);
-            break;
-            
-        default:
-            [NSException raise:NSInternalInconsistencyException format:@"Invalid image orientation"];
-            
-    }
-    
-    UIGraphicsBeginImageContext(bounds.size);
-    
-    CGContextRef context = UIGraphicsGetCurrentContext();
-    
-    if (orient == UIImageOrientationRight || orient == UIImageOrientationLeft) {
-        CGContextScaleCTM(context, -scaleRatio, scaleRatio);
-        CGContextTranslateCTM(context, -height, 0);
-    }
-    else {
-        CGContextScaleCTM(context, scaleRatio, -scaleRatio);
-        CGContextTranslateCTM(context, 0, -height);
-    }
-    
-    CGContextConcatCTM(context, transform);
-    
-    CGContextDrawImage(UIGraphicsGetCurrentContext(), CGRectMake(0, 0, width, height), imgRef);
-    UIImage *imageCopy = UIGraphicsGetImageFromCurrentImageContext();
-    UIGraphicsEndImageContext();
-    
-    return imageCopy;
-    //return imageCopy;
-}
 
 
 -(void)loadBffs
@@ -899,13 +920,14 @@ if (!appDelegate.passwordf)
 
 -(void)resetCallBack
 {
+    [tumblrHUD hide];
      [appDelegate.client setMessageHandler:viejo];
 }
 
 MQTTMessageHandler aca=^(MQTTMessage *message)
 {
     LogDebug(@"Incoming msg %@ %@",message.payload,message.payloadString);
-    [yo showMensaje:@"Heater Message" withMessage:message.payloadString doExit:NO];
+    [yo showMensaje:@"Heater Message" withMessage:message.payloadString doExit:YES];
     [yo resetCallBack];
 };
 
@@ -976,6 +998,7 @@ MQTTMessageHandler aca=^(MQTTMessage *message)
              [appDelegate.client setMessageHandler:aca];
         }
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+            [self hud];
             [comm lsender:@"session?password=zipo" andAnswer:NULL andTimeOut:1 vcController:self];
         });
     });

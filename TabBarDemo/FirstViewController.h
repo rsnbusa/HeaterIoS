@@ -11,6 +11,7 @@
 #import "CCColorCube.h"
 #import "httpVC.h"
 #import "MQTTKit.h"
+#import "AMTumblrHud.h"
 
 @interface FirstViewController : UIViewController <UIScrollViewDelegate, NSNetServiceDelegate, NSNetServiceBrowserDelegate,UICollectionViewDataSource, UICollectionViewDelegate,NSStreamDelegate >
 {
@@ -29,6 +30,8 @@
     UIImage *passOn,*passOff;
     UIImageView *lscrollView;
     MQTTMessageHandler viejo;
+    AMTumblrHud *tumblrHUD ;
+    NSTimer *mitimer;
 }
 //@property (strong,nonatomic) IBOutlet
 @property (strong) NSMutableString *host,*answer,*mqttServer;
@@ -36,6 +39,7 @@
 @property  (strong) NSNumber *effects;
 @property BOOL collect;
 @property (strong, nonatomic) IBOutlet UIScrollView         *picScroll;
+@property (strong, nonatomic) IBOutlet UIImageView          *hhud;
 @property (strong, nonatomic) IBOutlet UICollectionView     *album;
 @property (strong, nonatomic) IBOutlet UISlider             *fotoSize;
 @property (strong, nonatomic) IBOutlet UIButton             *onOff,*passSW,*addBut;
