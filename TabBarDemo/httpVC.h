@@ -7,7 +7,6 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "MQTTKit.h"
 
 @interface httpVC : NSObject
 {
@@ -17,5 +16,4 @@
 }
 
 -(uint)lsender: (NSString*) que andAnswer:(NSString **) quedijo andTimeOut:(float) cuantoEspero vcController:(id)quien;
--(uint)lsender: (NSString*) que andAnswer:(NSString **) quedijo andTimeOut:(float) cuantoEspero;
 @end

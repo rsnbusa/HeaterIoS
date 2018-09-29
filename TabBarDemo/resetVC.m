@@ -1,11 +1,3 @@
-//
-//  resetVC.m
-//  MeterIoT
-//
-//  Created by Robert on 2/8/17.
-//  Copyright © 2017 Colin Eberhardt. All rights reserved.
-//
-
 #import "resetVC.h"
 #if 1 // set to 1 to enable logs
 #define LogDebug(frmt, ...) NSLog([frmt stringByAppendingString:@"[%s]{%d}"], ##__VA_ARGS__,__PRETTY_FUNCTION__,__LINE__);
@@ -13,16 +5,14 @@
 #define LogDebug(frmt, ...) {}
 #endif
 
-
 @interface resetVC ()
 
 @end
 
 @implementation resetVC
 
-id yo;
 
--(void)killBill
+-(void)timeout
 {
     if(tumblrHUD)
         [tumblrHUD hide];
@@ -31,7 +21,13 @@ id yo;
 
 -(void)hud
 {
-    dispatch_async(dispatch_get_main_queue(), ^{
+    
+    if(tumblrHUD)
+    {
+        [tumblrHUD hide];
+        tumblrHUD=nil;
+    }
+  
         tumblrHUD = [[AMTumblrHud alloc] initWithFrame:CGRectMake((CGFloat) (_hhud.frame.origin.x),
                                                                   (CGFloat) (_hhud.frame.origin.y), 55, 20)];
         tumblrHUD.hudColor = _hhud.backgroundColor;
@@ -39,30 +35,22 @@ id yo;
         [tumblrHUD showAnimated:YES];
         mitimer=[NSTimer scheduledTimerWithTimeInterval:10
                                                  target:self
-                                               selector:@selector(killBill)
+                                               selector:@selector(timeout)
                                                userInfo:nil
                                                 repeats:NO];
-    });
-}
--(void)setCallBackNull
-{
-    [appDelegate.client setMessageHandler:NULL];
 }
 
 -(void)showMessage:(NSString*)title withMessage:(NSString*)que
 {
-    if(mitimer)
-        [mitimer invalidate];
-    dispatch_async(dispatch_get_main_queue(), ^{[tumblrHUD hide];});
+    if(alert)
+    {
+        [alert dismissViewControllerAnimated:YES completion:nil];
+        alert=nil;
+    }
 
-        UIAlertController* alert = [UIAlertController alertControllerWithTitle:title
-                                                                       message:que
-                                                                preferredStyle:UIAlertControllerStyleAlert];
+    alert = [UIAlertController alertControllerWithTitle:title message:que preferredStyle:UIAlertControllerStyleAlert];
         UIAlertAction* defaultAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault
-                                                              handler:^(UIAlertAction * action) {
-                                                                  
-                                                                  
-                                                              }];
+                                                              handler:nil];
         
         [alert addAction:defaultAction];
         [self presentViewController:alert animated:YES completion:nil];
@@ -71,49 +59,50 @@ id yo;
         });
     }
 
-MQTTMessageHandler resetx=^(MQTTMessage *message)
+
+- (void) rxMessage:(NSNotification *) notification
 {
-    LogDebug(@"Heater SettingsMsg %@ %@",message.payload,message.payloadString);
-    dispatch_async(dispatch_get_main_queue(), ^{
-        [yo showMessage:@"HeaterIoT Settings Msg" withMessage:message.payloadString];
-    });
-};
-//extern BOOL CheckWiFi();
+    if(tumblrHUD)
+        [tumblrHUD hide];
+    if(mitimer)
+        [mitimer invalidate];
+    
+    LogDebug (@"RX Successfull %@",notification.userInfo);
+    
+    if ([[notification name] isEqualToString:@"RShow"])
+        [self showMessage:@"Meter Msg" withMessage:notification.userInfo[@"Answer"]];
+}
+-(void)sendMqtt:(NSString*)mis
+{
+    [self hud];
+    [appDelegate.chan enviaWithQue:mis notikey:@"RShow"];
+}
 
 -(void)sendCmd:(NSString*)comando withTitle:(NSString*)title
 {
     UIAlertController *alert = [UIAlertController alertControllerWithTitle:title message:@"Please Confirm" preferredStyle:UIAlertControllerStyleAlert];
     UIAlertAction *defaultAction = [UIAlertAction actionWithTitle:@"Ok" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action){
-        [self hud];
-        yo=self;
-        if(appDelegate.client)
-            [appDelegate.client setMessageHandler:resetx];
-        [comm lsender:comando andAnswer:NULL  andTimeOut:2 vcController:self];
-    }];
+        [self sendMqtt:comando];}];
     UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleDefault handler:nil];
     [alert addAction:defaultAction];
     [alert addAction:cancelAction];
   
     // Present action where needed
-        [self presentViewController:alert animated:YES completion:nil];
-  
+    [self presentViewController:alert animated:YES completion:nil];
 }
 
 -(IBAction)displayTimer:(UISlider*)sender
 {
-    
     int son=sender.value;
     _dispT.text=[NSString stringWithFormat:@"%d Mins",son];
     [appDelegate.workingBFF setValue:[NSNumber numberWithInteger:son] forKey:@"bffDisp"];
-
 }
 
 - (IBAction)displaylengthSliderDidEndSliding:(UISlider*)sender {
     NSString *mensa;
     int son=sender.value;
     mensa=[NSString stringWithFormat:@"display?password=zipo&disptime=%d",son];
-    [self hud];
-    [comm lsender:mensa andAnswer:NULL  andTimeOut:2 vcController:self];
+    [self sendMqtt:mensa];
     NSManagedObjectContext *context =
     [appDelegate managedObjectContext];
     NSError *error;
@@ -122,7 +111,6 @@ MQTTMessageHandler resetx=^(MQTTMessage *message)
 
 -(IBAction)amps:(UISlider*)sender
 {
-  
     int son=sender.value/0.5;
     float final=0.5 * (float)son;
     _ampText.text=[NSString stringWithFormat:@"%.1f",final];
@@ -134,8 +122,7 @@ MQTTMessageHandler resetx=^(MQTTMessage *message)
     int son=sender.value/0.5;
     float final=0.5 * (float)son;
     mensa=[NSString stringWithFormat:@"ampscalib?password=zipo&calib=%.1f",final];
-    [self hud];
-    [comm lsender:mensa andAnswer:NULL  andTimeOut:2 vcController:self];
+    [self sendMqtt:mensa];
     NSManagedObjectContext *context =
     [appDelegate managedObjectContext];
     NSError *error;
@@ -174,39 +161,28 @@ MQTTMessageHandler resetx=^(MQTTMessage *message)
     [super viewDidLoad];
     appDelegate = (AppDelegate *)[[UIApplication sharedApplication] delegate];
     [self workingIcon];
-    comm=[httpVC new];
-    if(appDelegate.client)
-        [appDelegate.client setMessageHandler:resetx];
-    _ampText.text=[NSString stringWithFormat:@"%.1f", (float)[[appDelegate.workingBFF valueForKey:@"bffAmps"]floatValue]];
-    _ampSlider.value=(float)[[appDelegate.workingBFF valueForKey:@"bffAmps"]floatValue];
-    _dispT.text=[NSString stringWithFormat:@"%d", [[appDelegate.workingBFF valueForKey:@"bffDisp"]integerValue]];
-    _dispSlider.value=(float)[[appDelegate.workingBFF valueForKey:@"bffDisp"]integerValue];
-    
 }
 
 
 -(void)viewDidAppear:(BOOL)animated
 {
+    NSDictionary *dic;
     [super viewDidAppear:animated];
-    yo=self;
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(rxMessage:)
+                                                 name:@"RShow"
+                                               object:dic];
     [self workingIcon];
-    if(appDelegate.client)
-        [appDelegate.client setMessageHandler:resetx];
 }
- 
+
+- (void)viewWillDisappear:(BOOL)animated { //Is used as a Save Options if anything was changed Instead of Buttons
+    [super viewWillDisappear:animated];
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
 }
-
-/*
-#pragma mark - Navigation
-
-// In a storyboard-based application, you will often want to do a little preparation before navigation
-- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
-    // Get the new view controller using [segue destinationViewController].
-    // Pass the selected object to the new view controller.
-}
-*/
 
 @end

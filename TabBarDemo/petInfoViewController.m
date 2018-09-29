@@ -14,7 +14,7 @@
 #import "btSimplePopUp.h"
 #import "MBProgressHUD.h"
 
-#if 0 // set to 1 to enable logs
+#if 1 // set to 1 to enable logs
 #define LogDebug(frmt, ...) NSLog([frmt stringByAppendingString:@"[%s]{%d}"], ##__VA_ARGS__,__PRETTY_FUNCTION__,__LINE__);
 #else
 #define LogDebug(frmt, ...) {}
@@ -226,18 +226,16 @@ static const CGFloat LANDSCAPE_KEYBOARD_HEIGHT = 162;
         {
             mis=[NSString stringWithFormat:@"generalap?heater=%@&watts=%ld&volts=%ld&tschan=%@&tskey=%@&kwh=%.2f&mqtts=%@&mqttu=%@&mqttp=%@&mqttport=%@&autot=%@&monitor=%@&monTime=%@&ssl=%d",heatURL,
                  watts.text.integerValue,volts.text.integerValue,galons.text,water.text,kwh.text.floatValue,groupURL,emailURL,phone.text,mqttPort.text,autot.isOn?@"1":@"0",monitor.isOn?@"1":@"0",minutes.text,sslStatus?1:0];//multiple arguments
-            
-//        mis=[NSString stringWithFormat:@"generalap?heater=%@&group=%@&watts=%ld&volts=%ld&tschan=%@&tskey=%@&kwh=%.2f&email=%@&autoTemp=%d&onet=%d&monitor=%d&monTime=%@&ssl=%d",
-//             heatURL,groupURL, watts.text.integerValue,volts.text.integerValue,galons.text,water.text,kwh.text.floatValue,emailURL,
-//             autot.isOn,offline.isOn,monitor.isOn,minutes.text,sslStatus];//multiple arguments
-        reply=[comm lsender:mis andAnswer:&lanswer andTimeOut:[[[NSUserDefaults standardUserDefaults]objectForKey:@"txTimeOut"] intValue] vcController:self];
-        }
-        else
-            reply=1; //force clone
-        if(!reply)
-            [self showErrorMessage];
-        else
-        {
+            [appDelegate.chan enviaWithQue:mis notikey:@"Show"];
+
+//        reply=[comm lsender:mis andAnswer:&lanswer andTimeOut:[[[NSUserDefaults standardUserDefaults]objectForKey:@"txTimeOut"] intValue] vcController:self];
+//        }
+//        else
+//            reply=1; //force clone
+//        if(!reply)
+//            [self showErrorMessage];
+//        else
+//        {
             
             [appDelegate.workingBFF setValue:petName.text forKey:@"bffName"];
             [appDelegate.workingBFF setValue:phone.text forKey:@"bffPhone"];
@@ -262,12 +260,7 @@ static const CGFloat LANDSCAPE_KEYBOARD_HEIGHT = 162;
                 LogDebug(@"Save error Info %@",error);
                 return;//if we cant save it return and dont send anything toi the esp8266
             }
-//            if([[appDelegate.workingBFF valueForKey:@"bffOffline"] boolValue])
-//            {
-//                NSString *mess=[NSString stringWithFormat:@"%@ was successfully added. Now connect to WiFi named %@ ",[appDelegate.workingBFF valueForKey:@"bffName"],[appDelegate.workingBFF valueForKey:@"bffName"]];
-//                [self showMessage:@"New Heater" withMessage:mess];
-//            }
-//            else
+
                 [self performSegueWithIdentifier:@"returnFirst" sender:self];
         }
     }
@@ -539,7 +532,7 @@ static const CGFloat LANDSCAPE_KEYBOARD_HEIGHT = 162;
 - (void)viewWillDisappear:(BOOL)animated { //Is used as a Save Options if anything was changed Instead of Buttons   
     [super viewWillDisappear:animated];
     appDelegate.clonef=NO;
-    
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
 -(void)dismiss:(UIAlertController*)alert
@@ -614,6 +607,7 @@ static const CGFloat LANDSCAPE_KEYBOARD_HEIGHT = 162;
         [appDelegate.workingBFF setValue:email.text forKey:@"bffMqttU"];
         [appDelegate.workingBFF setValue:petName.text forKey:@"bffGroup"];
         [appDelegate.workingBFF setValue:phone.text forKey:@"bffMqttP"];
+    //    NSLog(@"Mqtt %@ Port %@",group.text,phone.text);
         [appDelegate.workingBFF setValue:[NSNumber numberWithInteger:[mqttPort.text integerValue]]  forKey:@"bffMQTTPort"];
         [appDelegate.workingBFF setValue:[NSNumber numberWithInteger:watts.text.integerValue] forKey:@"bffWatts"];
         [appDelegate.workingBFF setValue:[NSNumber numberWithInteger:volts.text.integerValue] forKey:@"bffVolts"];

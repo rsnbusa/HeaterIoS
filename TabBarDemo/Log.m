@@ -15,19 +15,22 @@
 
 @implementation Log
 
-
-id yo;
-
--(void)killBill
+-(void)timeout
 {
     if(tumblrHUD)
         [tumblrHUD hide];
-    [self showMessage:@"Meter Msg" withMessage:@"Comm Timeout"];
+    [self showMessage:@"Heater Msg" withMessage:@"Comm Timeout"];
 }
 
 -(void)hud
 {
-    dispatch_async(dispatch_get_main_queue(), ^{
+
+    if(tumblrHUD)
+    {
+        [tumblrHUD hide];
+        tumblrHUD=nil;
+    }
+    
         tumblrHUD = [[AMTumblrHud alloc] initWithFrame:CGRectMake((CGFloat) (_hhud.frame.origin.x),
                                                                   (CGFloat) (_hhud.frame.origin.y), 55, 20)];
         tumblrHUD.hudColor = _hhud.backgroundColor;
@@ -35,20 +38,22 @@ id yo;
         [tumblrHUD showAnimated:YES];
         mitimer=[NSTimer scheduledTimerWithTimeInterval:10
                                                  target:self
-                                               selector:@selector(killBill)
+                                               selector:@selector(timeout)
                                                userInfo:nil
                                                 repeats:NO];
-    });
+
 }
 
 
 -(void)showMessage:(NSString*)title withMessage:(NSString*)que
 {
-    if(mitimer)
-        [mitimer invalidate];
-    dispatch_async(dispatch_get_main_queue(), ^{[tumblrHUD hide]; });
+    if(alert)
+    {
+        [alert dismissViewControllerAnimated:YES completion:nil];
+        alert=nil;
+    }
     
-    UIAlertController* alert = [UIAlertController alertControllerWithTitle:title
+     alert = [UIAlertController alertControllerWithTitle:title
                                                                    message:que
                                                             preferredStyle:UIAlertControllerStyleAlert];
     UIAlertAction* defaultAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault
@@ -78,37 +83,35 @@ id yo;
 -(NSDictionary*)getLogEntry:(NSData*) data from:(int)desde
 {
     int integ;
-    uint16_t code,code1,len;
+    uint16_t code,code1;
     char texto[20];
-    NSTimeZone *tz = [NSTimeZone defaultTimeZone];
     
     NSRange rango=NSMakeRange(desde, 4);
     [data getBytes:&integ range:rango];
     NSDate *date1 = [NSDate dateWithTimeIntervalSince1970:integ];
-    NSTimeInterval timeZoneSeconds = [[NSTimeZone localTimeZone] secondsFromGMT];
-     rango=NSMakeRange(desde+4,2);
+    
+    rango=NSMakeRange(desde+4,2);
     [data getBytes:&code range:rango];
     NSNumber *codigo=[NSNumber numberWithInt:code];
+    
     rango=NSMakeRange(desde+6,2);
     [data getBytes:&code1 range:rango];
     NSNumber *codigo1=[NSNumber numberWithInt:code1];
+    
     rango=NSMakeRange(desde+8,20);
     [data getBytes:&texto range:rango];
+    
     NSDictionary * dic =[[NSDictionary alloc]
                         initWithObjectsAndKeys:codigo,@"code",codigo1,@"code1",[appDelegate.logText objectAtIndex:code],@"mess",date1,@"date",nil] ;
-//    NSDictionary * dic =[[NSDictionary alloc]
-    //                     initWithObjectsAndKeys:date1,@"date",codigo,@"code",codigo1,@"code1",@"algo",@"mess",nil] ;
-    
-    
     return(dic);
 }
 
 -(void)showlog:(NSData *)data
 {
-//    NSLog(@"Datos:%@ len %u",data,(unsigned long)data.length);
-    if(mitimer)
-        [mitimer invalidate];
     uint16_t desde,len,codeid;
+    if (data.length<32)
+        return; // in case No Log Messages
+    
     NSRange rango=NSMakeRange(0, 2);
     [data getBytes:&codeid range:rango];
     rango=NSMakeRange(2, 2);
@@ -123,49 +126,54 @@ id yo;
     while(sobran>0)
     {
         NSDictionary *entry=[self getLogEntry:data from:desde];
- //      len=[entry[@"len"] integerValue];
+       len=[entry[@"len"] integerValue];
         desde+=LOGLEN;
         sobran-=LOGLEN;
         [entries addObject:entry];
-    //   NSLog(@"Date %@ Code %@ Message:%@",entry[@"date"],entry[@"code"],entry[@"mess"]);
+        entry=nil;
+   //    NSLog(@"Date %@ Code %@ Message:%@",entry[@"date"],entry[@"code"],entry[@"mess"]);
         
     }
-      dispatch_async(dispatch_get_main_queue(), ^{
     [_table reloadData];
-      });
 }
 
-MQTTMessageHandler llog=^(MQTTMessage *message)
+
+- (void) rxMessage:(NSNotification *) notification
 {
-    [yo showlog:message.payload];
-};
+    if(tumblrHUD)
+        [tumblrHUD hide];
+    if(mitimer)
+        [mitimer invalidate];
+    
+    if ([[notification name] isEqualToString:@"Log"])
+        [self showlog:notification.userInfo[@"Data"]];
+}
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    comm=[httpVC new];
     entries=[[NSMutableArray alloc] initWithCapacity:20];
 }
 
 - (void)viewDidAppear:(BOOL)animated {
-   
-    yo=self;
+    NSDictionary *texto;
+
+    [super viewDidAppear:animated];
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(rxMessage:)
+                                                 name:@"Log"
+                                               object:texto];
+    
+    
     appDelegate =   (AppDelegate *)[[UIApplication sharedApplication] delegate];
     [self workingIcon];
-
-    if(appDelegate.client){
-        lastmess=appDelegate.client.messageHandler;
-        [appDelegate.client setMessageHandler:llog];
-    }
     [entries removeAllObjects];
-    [super viewDidAppear:animated];
     [self hud];
-    [comm lsender:@"readlog?password=zipo" andAnswer:NULL andTimeOut:2 vcController:self];
+    [appDelegate.chan enviaWithQue:@"readlog?password=zipo" notikey:@"Log"];
 }
 
-- (void)viewWillDisappear:(BOOL)animated { //Is used as a Save Options if anything was changed Instead of Buttons
+- (void)viewWillDisappear:(BOOL)animated { 
     [super viewWillDisappear:animated];
-    if(appDelegate.client)
-        [appDelegate.client setMessageHandler:lastmess];
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
 - (void)didReceiveMemoryWarning {
@@ -202,10 +210,10 @@ MQTTMessageHandler llog=^(MQTTMessage *message)
     cell.codeImage.image=[UIImage imageNamed:rsimage];
     if(cell.codeImage.image==NULL)
         cell.codeImage.image=[UIImage imageNamed:@"general"];
-      codenum=[entry[@"code1"] integerValue];
+    codenum=[entry[@"code1"] integerValue];
     cell.code1.text=[NSString stringWithFormat:@"%d",codenum];
     NSDateFormatter *dateFormat = [[NSDateFormatter alloc] init];
-   [dateFormat setDateFormat:@"HH:mm:ss"];
+    [dateFormat setDateFormat:@"HH:mm:ss"];
     NSString *dateString = [dateFormat stringFromDate:entry[@"date"]];
     cell.hora.text=dateString;
     [dateFormat setDateFormat:@"dd/MM/yy"];
@@ -213,15 +221,4 @@ MQTTMessageHandler llog=^(MQTTMessage *message)
     cell.dia.text=dateString;
     return cell;
 }
-
-/*
-#pragma mark - Navigation
-
-// In a storyboard-based application, you will often want to do a little preparation before navigation
-- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
-    // Get the new view controller using [segue destinationViewController].
-    // Pass the selected object to the new view controller.
-}
-*/
-
 @end

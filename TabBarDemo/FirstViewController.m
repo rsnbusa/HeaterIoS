@@ -25,12 +25,12 @@
 #include <arpa/inet.h>
 #import <SystemConfiguration/CaptiveNetwork.h>
 #import <NetworkExtension/NEHotspotHelper.h>
-//#import <AdSupport/ASIdentifierManager.h>
+
 @interface FirstViewController ()
 
 @end
 
-#if 1 // set to 1 to enable logs
+#if 0 // set to 1 to enable logs
 #define LogDebug(frmt, ...) NSLog([frmt stringByAppendingString:@"[%s]{%d}"], ##__VA_ARGS__,__PRETTY_FUNCTION__,__LINE__);
 #else
 #define LogDebug(frmt, ...) {}
@@ -39,34 +39,38 @@
 @implementation FirstViewController
 
 @synthesize host,answer,effects,petName,collect,picScroll,mqttServer,album,fotoSize,onOff,netServiceBrowser,passSW,addBut;
-id yo;
 
--(void)killBill
+-(void)timeout
 {
     if(tumblrHUD)
         [tumblrHUD hide];
-    [self showMensaje:@"Meter Msg" withMessage:@"Comm Timeout" doExit:NO];
+    
+    [self showMensaje:@"Heater Msg" withMessage:@"Comm Timeout" doExit:NO];
 }
 
--(void)hud
+-(void)hud:(int)tim
 {
-    dispatch_async(dispatch_get_main_queue(), ^{
+    
+    if(tumblrHUD)
+    {
+        [tumblrHUD hide];
+        tumblrHUD=nil;
+    }
+    
         tumblrHUD = [[AMTumblrHud alloc] initWithFrame:CGRectMake((CGFloat) (_hhud.frame.origin.x),
                                                                   (CGFloat) (_hhud.frame.origin.y), 55, 20)];
         tumblrHUD.hudColor = _hhud.backgroundColor;
         [self.view addSubview:tumblrHUD];
         [tumblrHUD showAnimated:YES];
-        mitimer=[NSTimer scheduledTimerWithTimeInterval:10
+        mitimer=[NSTimer scheduledTimerWithTimeInterval:tim
                                                  target:self
-                                               selector:@selector(killBill)
+                                               selector:@selector(timeout)
                                                userInfo:nil
                                                 repeats:NO];
-    });
 }
 
 -(void)oneTap:(id)sender
 {
-
     UIStoryboard *storyboard=self.storyboard;
     petInfoViewController *myVC = (petInfoViewController *)[storyboard instantiateViewControllerWithIdentifier:@"PetInfo"];
     appDelegate.addf=NO;
@@ -75,25 +79,32 @@ id yo;
 
  -(void)showMensaje:(NSString*)title withMessage:(NSString*)mensaje doExit:(BOOL)salir
 {
-    if(mitimer)
-        [mitimer invalidate];
-    dispatch_async(dispatch_get_main_queue(), ^{[tumblrHUD hide]; });
+    if (alert)
+    {
+        [alert dismissViewControllerAnimated:YES completion:nil];
+        alert=nil;
+    }
 
-    UIAlertController* alert = [UIAlertController alertControllerWithTitle:title
+    alert = [UIAlertController alertControllerWithTitle:title
                                                                    message:mensaje
                                                             preferredStyle:UIAlertControllerStyleAlert];
     UIAlertAction* defaultAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault
                                                           handler:^(UIAlertAction * action) {
-                                                              [backGroundBlurr removeFromSuperview];
                                                             //   if (salir) exit(0);
                                                           }];
     
     [alert addAction:defaultAction];
     [self presentViewController:alert animated:YES completion:nil];
-    if(salir)
+
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         [alert dismissViewControllerAnimated:YES completion:nil];
     });
+}
+
+-(void)sendMqtt:(NSString*)mis withNotification:(NSString*)notif
+{
+    [self hud:10];
+    [appDelegate.chan enviaWithQue:mis notikey:notif];
 }
 
 -(void)confirmDelete
@@ -103,12 +114,9 @@ id yo;
                                                             preferredStyle:UIAlertControllerStyleAlert];
     UIAlertAction* defaultAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault
                                                           handler:^(UIAlertAction * action) {
-                                                              [backGroundBlurr removeFromSuperview];
                                                               NSString *mis=[NSString stringWithFormat:@"erase?bff=%@&password=zipo",
                                                                                 [appDelegate.workingBFF valueForKey:@"bffName"]];
-                                                              [self hud];
-                                                              [comm lsender:mis andAnswer:NULL andTimeOut:[[[NSUserDefaults standardUserDefaults]objectForKey:@"txTimeOut"] intValue]];
-                                                              //return;//should be return
+                                                              [self sendMqtt:mis withNotification:@"Mensaje"];
                                                               [self deleteAllEntity:@"Emails"];
                                                               [self deleteAllEntity:@"Servings"];
                                                               [appDelegate.bffs removeObject: appDelegate.workingBFF];
@@ -132,7 +140,6 @@ id yo;
                                                           }];
     UIAlertAction* cancelAction = [UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleDefault
                                                           handler:^(UIAlertAction * action) {
-                                                              [backGroundBlurr removeFromSuperview];
                                                           }];
     
     [alert addAction:defaultAction];
@@ -148,12 +155,8 @@ id yo;
     int cual=sender.tag?0:1;
     [self OnOffState:cual];
     NSString *cmd=[NSString stringWithFormat:@"OnOff?status=%d",cual];
-    if(appDelegate.client){
-  //      viejo=appDelegate.client.messageHandler;
-        [appDelegate.client setMessageHandler:aca];
-    }
-    [self hud];
-    [comm lsender:cmd andAnswer:NULL andTimeOut:[[[NSUserDefaults standardUserDefaults]objectForKey:@"txTimeOut"] intValue]];
+    [self sendMqtt:cmd withNotification:@"Mensaje"];
+
     [appDelegate.workingBFF setValue:[NSNumber numberWithInteger:cual] forKey:@"bffOnOff"];
     NSError *error;
     if(![[appDelegate managedObjectContext] save:&error])
@@ -163,168 +166,10 @@ id yo;
 - (IBAction)fotoSizeSlider:(UISlider*)sender
 {
     fotoHV=(int)sender.value;
-    [album reloadData];}
-
-- (uint8_t *)buffer
-{
-    return self->buffer;
+    [album reloadData];
+    
 }
 
-- (void)startSend:(NSString *)filePath withImage:laImagen
-{
-    BOOL                    success;
-    NSURL *                 url;
-    int w,h;
-    float rel;
-    
-    // save for the HttpStatus image
-    
-    w=(int)imagel.size.width;
-    h=(int)imagel.size.height;
-    NSString *elNombre=[filePath lastPathComponent];
-    rel=1.0;
-    if ((int)imagel.size.height>700 || (int)imagel.size.width>700){
-        if((int)imagel.size.height>(int)imagel.size.width)
-        {
-            rel=imagel.size.height/imagel.size.width;
-            h=700;
-            w=h/rel;
-        }
-        else
-        {
-            rel=imagel.size.width/imagel.size.height;
-            w=700;
-            h=w /rel;
-        }
-        //resize it
-        CGSize newSize;
-        newSize = CGSizeMake(w, h);
-        UIGraphicsBeginImageContext(newSize);
-        [imagel drawInRect:CGRectMake(0, 0, newSize.width, newSize.height)];
-        UIImage *newImage = UIGraphicsGetImageFromCurrentImageContext();
-        UIGraphicsEndImageContext();
-        NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-        NSString *final=[NSString stringWithFormat:@"%tmp.txt"];
-        NSString *lfilePath = [[paths objectAtIndex:0] stringByAppendingPathComponent:final];
-        [UIImagePNGRepresentation(newImage) writeToFile:lfilePath atomically:YES];
-        filePath=lfilePath;
-    }
-    
-    assert([[NSFileManager defaultManager] fileExistsAtPath:filePath]);
-    if(self.networkStream!=nil)
-    {
-        [self showMensaje:@"Image Upload" withMessage:@"Still one pending. Retry later" doExit:NO];
-        return;
-    }
- //   assert(self.networkStream == nil);      // don't tap send twice in a row!
-//    assert(self.fileStream == nil);         // ditto
-    NSString *filef=[NSString stringWithFormat:@"ftp://feediot.co.nf/%@",elNombre];
-    NSString *mis=[NSString stringWithFormat:@"image?w=%d&h=%d",w,h];
-    [self hud];
-    [comm lsender:mis andAnswer:NULL andTimeOut:[[[NSUserDefaults standardUserDefaults]objectForKey:@"txTimeOut"] intValue] vcController:self];
-
-    
-    // First get and check the URL.
-    url = [NSURL URLWithString:filef];
-    self.fileStream = [NSInputStream inputStreamWithFileAtPath:filePath];
-    assert(self.fileStream != nil);
-    
-    [self.fileStream open];
-    // Open a CFFTPStream for the URL.
-    self.networkStream = CFBridgingRelease(CFWriteStreamCreateWithFTPURL(NULL, (__bridge CFURLRef) url));
-    assert(self.networkStream != nil);
-    
-    
-    success = [self.networkStream setProperty:@"2121429_rsn" forKey:(id)kCFStreamPropertyFTPUserName];
-    assert(success);
-    success = [self.networkStream setProperty:@"Ziposimpson0179" forKey:(id)kCFStreamPropertyFTPPassword];
-    assert(success);
-    
-    self.networkStream.delegate = self;
-    [self.networkStream scheduleInRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
-    [self.networkStream open];
-    
-    // Tell the UI we're sending.
-}
-
-- (void)stopSend
-{
-    if (self.networkStream != nil) {
-        [self.networkStream removeFromRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
-        self.networkStream.delegate = nil;
-        [self.networkStream close];
-        self.networkStream = nil;
-    }
-    if (self.fileStream != nil) {
-        [self.fileStream close];
-        self.fileStream = nil;
-    }
-}
-
-
-- (void)stream:(NSStream *)aStream handleEvent:(NSStreamEvent)eventCode
-// An NSStream delegate callback that's called when events happen on our
-// network stream.
-{
-#pragma unused(aStream)
-    // assert(aStream == self.networkStream);
-    
-    switch (eventCode) {
-        case NSStreamEventOpenCompleted: {
-            // [self updateStatus:@"Opened connection"];
-            //      LogDebug(@"Open connection  [%s]");
-        } break;
-        case NSStreamEventHasBytesAvailable: {
-            assert(NO);     // should never happen for the output stream
-        } break;
-        case NSStreamEventHasSpaceAvailable: {
-            //   [self updateStatus:@"Sending"];
-            //  LogDebug(@"Sending  [%s]");
-            // If we don't have any data buffered, go read the next chunk of data.
-            
-            if (self.bufferOffset == self.bufferLimit) {
-                NSInteger   bytesRead;
-                
-                bytesRead = [self.fileStream read:self.buffer maxLength:32768];
-                
-                if (bytesRead == -1) {
-                    [self showMensaje:@"Image FTP Transfer" withMessage:@"Error reading file" doExit:NO];
-                    [self stopSend];
-                } else if (bytesRead == 0) {
-                    //   [self showErrorMessage:@"Image FTP Transfer" andMsg:@"Picture Uploaded"];
-                    [self stopSend];
-                } else {
-                    self.bufferOffset = 0;
-                    self.bufferLimit  = bytesRead;
-                }
-            }
-            
-            // If we're not out of data completely, send the next chunk.
-            
-            if (self.bufferOffset != self.bufferLimit) {
-                NSInteger   bytesWritten;
-                bytesWritten = [self.networkStream write:&self.buffer[self.bufferOffset] maxLength:self.bufferLimit - self.bufferOffset];
-                assert(bytesWritten != 0);
-                if (bytesWritten == -1) {
-                    [self showMensaje:@"Image FTP Transfer" withMessage:@"Network write error. Retry" doExit:NO];
-                    [self stopSend];
-                } else {
-                    self.bufferOffset += bytesWritten;
-                }
-            }
-        } break;
-        case NSStreamEventErrorOccurred: {
-            [self showMensaje:@"Image FTP Transfer" withMessage:@"Stream Open error." doExit:NO];
-            [self stopSend];
-        } break;
-        case NSStreamEventEndEncountered: {
-            // ignore
-        } break;
-        default: {
-            assert(NO);
-        } break;
-    }
-}
 
 - (UIImage *)scaleAndRotateImage:(UIImage *) image {
     int kMaxResolution = 320;
@@ -458,9 +303,6 @@ id yo;
            if(![[appDelegate managedObjectContext] save:&error])
               LogDebug(@"Save error Image bff %@",error);
     }
-    if (![[appDelegate.workingBFF valueForKey:@"bffOffline"] boolValue])
-        [self startSend:filePath withImage:imagel]; //save the original one
-    
    }
 
 -(void)getPhoto
@@ -473,7 +315,6 @@ id yo;
 
 -(void)createDefaults
 {
-       // no ip, must get it from Device or scan network
     [[NSUserDefaults standardUserDefaults] setObject:[NSNumber numberWithInteger: 0x11223344]  forKey:@"centinel"];
     [[NSUserDefaults standardUserDefaults] setObject:[NSNumber numberWithInt:10] forKey:@"txTimeOut"];
     [[NSUserDefaults standardUserDefaults] setObject:[NSNumber numberWithInt:0] forKey:@"transport"];
@@ -492,14 +333,12 @@ id yo;
     
     NSFetchRequest *request = [[NSFetchRequest alloc] init];
     [request setEntity:entityDesc];
-//    NSArray *nada=[context executeFetchRequest:request
-//                            error:&error] ;
     NSBatchDeleteRequest *delete = [[NSBatchDeleteRequest alloc] initWithFetchRequest:request];
     [[appDelegate persistentStoreCoordinator] executeRequest:delete withContext:context error:&error];
     [context save:&error];
 }
 
--(void)getMealCount
+-(void)getUnitCount
 {
     NSManagedObjectContext *context =[appDelegate managedObjectContext];
     
@@ -565,18 +404,16 @@ id yo;
 
 -(void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView
 {
-    // if([[self.workingBFF valueForKey:@"bffGroup"] isEqualToString:@""])
-    [appDelegate.workingBFF setValue:[appDelegate.workingBFF valueForKey:@"bffName"] forKey:@"bffGroup"];
-    NSString *lstr=[NSString stringWithFormat:@"HeatIoT/%@/%@/%@/MSG",[appDelegate.workingBFF valueForKey:@"bffGroup"],[appDelegate.workingBFF valueForKey:@"bffName"], [[NSUserDefaults standardUserDefaults]objectForKey:@"bffUID"]];
-    [appDelegate unsubscribeMQTT:lstr];
+    [appDelegate.chan unsubscribe];
     
     indexOfPage = roundf(scrollView.contentOffset.x / scrollView.frame.size.width);
+    if (indexOfPage==appDelegate.lastpos)
+        return; //Same position do nothing
     appDelegate.lastpos=indexOfPage;
     appDelegate.workingBFF=appDelegate.bffs[indexOfPage];
     // Subscribe new mqtt queues
-   
-    lstr=[NSString stringWithFormat:@"HeatIoT/%@/%@/%@/MSG",[appDelegate.workingBFF valueForKey:@"bffGroup"],[appDelegate.workingBFF valueForKey:@"bffName"], [[NSUserDefaults standardUserDefaults]objectForKey:@"bffUID"]];
-    [appDelegate subscribeMQTT:lstr];
+    NSLog(@"Subscribe %@ %@",[appDelegate.workingBFF valueForKey:@"bffGroup"],[appDelegate.workingBFF valueForKey:@"bffName"]);
+    [appDelegate.chan subscribeWithGrupo:[appDelegate.workingBFF valueForKey:@"bffGroup"] meter:[appDelegate.workingBFF valueForKey:@"bffName"] notif:nil];
     //Show name
     CATransition *transition = [CATransition animation];
     transition.duration = 0.80;
@@ -590,9 +427,6 @@ id yo;
     [self OnOffState:(int)[[appDelegate.workingBFF valueForKey:@"bffOnOff"] integerValue] ];
     [self getArrays];
 }
-
-
-
 
 -(void)loadBffs
 {
@@ -655,6 +489,7 @@ id yo;
     
     if (appDelegate.bffs.count>0)
             appDelegate.workingBFF=appDelegate.bffs[0]; //First record is the working record
+    appDelegate.lastpos=0;
     picScroll.contentSize = CGSizeMake(width * appDelegate.bffs.count, heigth);
 
     [picScroll scrollRectToVisible: CGRectMake(0, 0, width, heigth) animated: true];
@@ -665,7 +500,6 @@ id yo;
 
 -(IBAction)deleteBFF:(id)sender
 {
-
     [self confirmDelete];
 }
 
@@ -825,58 +659,6 @@ id yo;
     [self presentViewController:myVC animated:YES completion:nil];
 }
 
--(void)bj {
-    //   LogDebug(@"BJloop");
-    [netServiceBrowser stop];
-    
-    
-    
-    
-}
--(BOOL) startBonjour
-{
-    netServiceBrowser = [[NSNetServiceBrowser alloc] init];
-    if( !netServiceBrowser ) {
-        return NO;
-    }
-    netServiceBrowser.delegate = self;
-    [appDelegate.feeders removeAllObjects];
-    [netServiceBrowser searchForServicesOfType:@"_heatiot._tcp." inDomain:@"local."];
-    return YES;
-}
-
-- (void)netServiceBrowserWillSearch:(NSNetServiceBrowser *)aNetServiceBrowser
-{
-      LogDebug(@"WillSearch %@",aNetServiceBrowser);
-}
-
-- (void)netServiceBrowser:(NSNetServiceBrowser *)sender didNotSearch:(NSDictionary *)errorInfo
-{
-    //  LogDebug(@"DidNotSearch: %@", errorInfo);
-}
-
-- (void) netService:(NSNetService *)sender didUpdateTXTRecordData:(NSData *)data
-{
-    //  LogDebug(@"didUpdateTXTRecordData: %@", data);
-    
-}
-
-- (void)netServiceBrowserDidStopSearch:(NSNetServiceBrowser *)sender
-{
-    //  LogDebug(@"DidStopSearch");
-}
-
-- (void)netService:(NSNetService *)sender didNotResolve:(NSDictionary *)errorDict
-{
-    
-    //   LogDebug(@"DidNotResolve: %@", errorDict);
-}
-
-- (void) netServiceWillResolve:(NSNetService *)sender
-{
-    //  LogDebug(@"willresolve");
-}
-
 -(void) checkLogin
 {
     LogDebug(@"passf check %d",appDelegate.passwordf);
@@ -889,16 +671,12 @@ if (!appDelegate.passwordf)
 
 -(void)longPressTap:(UILongPressGestureRecognizer*)sender
 {
-  //  UIGestureRecognizer *recognizer = (UIGestureRecognizer*) sender;
     if (sender.state == UIGestureRecognizerStateEnded)
         [self viewMode:NULL];
-
-   
 }
 
 -(void)cloneBut:(UILongPressGestureRecognizer*)sender
 {
-    //  UIGestureRecognizer *recognizer = (UIGestureRecognizer*) sender;
     if (sender.state == UIGestureRecognizerStateEnded)
     {
         appDelegate.clonef=YES;
@@ -918,30 +696,49 @@ if (!appDelegate.passwordf)
     });
 }
 
--(void)resetCallBack
+- (void) rxMessage:(NSNotification *) notification
 {
-    [tumblrHUD hide];
-     [appDelegate.client setMessageHandler:viejo];
+    if(tumblrHUD)
+        [tumblrHUD hide];
+    if(mitimer)
+        [mitimer invalidate];
+    
+    if ([[notification name] isEqualToString:@"Mensaje"])
+    {
+        LogDebug (@"RX Successfull %@",notification.userInfo);
+        [self showMensaje:@"Meter Message" withMessage:notification.userInfo[@"Answer"] doExit:NO];
+    }
+    
+    if ([[notification name] isEqualToString:@"Unsolicited"])
+    {
+        LogDebug (@"Unsolicited %@",notification.userInfo);
+        [self showMensaje:@"Meter Unsolicited Message" withMessage:notification.userInfo[@"Answer"] doExit:NO];
+    }
 }
 
-MQTTMessageHandler aca=^(MQTTMessage *message)
+- (void) validSubscribe:(NSNotification *) notification
 {
-    LogDebug(@"Incoming msg %@ %@",message.payload,message.payloadString);
-    [yo showMensaje:@"Heater Message" withMessage:message.payloadString doExit:YES];
-    [yo resetCallBack];
-};
+    if ([[notification name] isEqualToString:@"Subscribe"]){
+        tumblrHUD.hudColor = UIColor.greenColor;
+        LogDebug (@"Subscription Successfull %@",notification.userInfo);
+        [appDelegate.chan enviaWithQue:@"session?password=zipo" notikey:@"Mensaje"];
+    }
+}
 
+- (void) validConn:(NSNotification *) notification
+{
+    if ([[notification name] isEqualToString:@"Connect"]){
+        LogDebug (@"Connection Successfull %@",notification.userInfo);
+        tumblrHUD.hudColor = UIColor.yellowColor;
+        
+        [appDelegate.chan subscribeWithGrupo:[appDelegate.workingBFF valueForKey:@"bffName"] meter:[appDelegate.workingBFF valueForKey:@"bffName"] notif:@"Subscribe"];
+        
+    }
+}
 
 - (void)viewDidLoad {
   
     [super viewDidLoad];
-    passOn =    ([UIDevice currentDevice].userInterfaceIdiom == UIUserInterfaceIdiomPad)?[UIImage imageNamed:@"lockedbig.png"]:[UIImage imageNamed:@"locked.png"];
-    passOff =     ([UIDevice currentDevice].userInterfaceIdiom == UIUserInterfaceIdiomPad)?  [UIImage imageNamed:@"unlockedbig.png"]:[UIImage imageNamed:@"unlocked.png"];
-
-    yo=self;
-    NSString  *currentDeviceId = [[[UIDevice currentDevice] identifierForVendor]UUIDString];
- //   NSLog(@"UID %@",currentDeviceId);
-    comm=[httpVC new];
     NSNumber *centinel= [[NSUserDefaults standardUserDefaults]objectForKey:@"centinel"];
     if (centinel.integerValue !=0x11223344)
         [self createDefaults];
@@ -957,52 +754,31 @@ MQTTMessageHandler aca=^(MQTTMessage *message)
     petName.hidden=NO;
     album.hidden=YES;
     fotoSize.transform = CGAffineTransformScale(CGAffineTransformIdentity, .75, 0.75);
-  //  if([UIDevice currentDevice].userInterfaceIdiom == UIUserInterfaceIdiomPad)
-    //    onOff.transform = CGAffineTransformScale(CGAffineTransformIdentity, 2.0, 2.0);
- //   servers=[[NSMutableArray alloc]init];
- //   ports=[[NSMutableArray alloc]init];
-//    NSString *maca= [self getMacAddress];
     mqttServer=[NSMutableString string];// blank
-//    [[NSUserDefaults standardUserDefaults] setObject:maca forKey:@"bffUID"];
-  //  LogDebug(@"Seting bffUID %@",[[NSUserDefaults standardUserDefaults]objectForKey:@"bffUID"]);
-    
-    /* // use this when final production for iphone. No MAC in iphone Use MACA in simulator because every time you run the app it changes the UID...
-     NSString *uid=[[[UIDevice currentDevice]identifierForVendor]UUIDString];
-     NSString *trimmedString=[uid substringFromIndex:MAX((int)[uid length]-17, 0)];
-     [[NSUserDefaults standardUserDefaults] setObject:trimmedString  forKey:@"bffUID"];
-     [[NSUserDefaults standardUserDefaults] synchronize];*/
     
     appDelegate =   (AppDelegate *)[[UIApplication sharedApplication] delegate];
-    heaterOn =    ([UIDevice currentDevice].userInterfaceIdiom == UIUserInterfaceIdiomPad)?[UIImage imageNamed:@"onsmall.png"]:[UIImage imageNamed:@"oniphone.png"];
-    heaterOff =     ([UIDevice currentDevice].userInterfaceIdiom == UIUserInterfaceIdiomPad)?  [UIImage imageNamed:@"offsmall.png"]:[UIImage imageNamed:@"offiphone.png"];
-    grid =          [UIImage imageNamed:@"grid.png"];
-    pano =          [UIImage imageNamed:@"panorama.png"];
-    answer=[NSMutableString string];
+    
+    heaterOn =       ([UIDevice currentDevice].userInterfaceIdiom == UIUserInterfaceIdiomPad)?[UIImage imageNamed:@"onsmall.png"]:[UIImage imageNamed:@"oniphone.png"];
+    heaterOff =      ([UIDevice currentDevice].userInterfaceIdiom == UIUserInterfaceIdiomPad)?  [UIImage imageNamed:@"offsmall.png"]:[UIImage imageNamed:@"offiphone.png"];
+    grid =           [UIImage imageNamed:@"grid.png"];
+    pano =           [UIImage imageNamed:@"panorama.png"];
+    passOn =         ([UIDevice currentDevice].userInterfaceIdiom == UIUserInterfaceIdiomPad)?[UIImage imageNamed:@"lockedbig.png"]:[UIImage imageNamed:@"locked.png"];
+    passOff =        ([UIDevice currentDevice].userInterfaceIdiom == UIUserInterfaceIdiomPad)?  [UIImage imageNamed:@"unlockedbig.png"]:[UIImage imageNamed:@"unlocked.png"];
+
     appDelegate.messageType=0; //web service comm
     UILongPressGestureRecognizer *longPressBut = [[UILongPressGestureRecognizer alloc]initWithTarget:self action:@selector(cloneBut:)];
     [addBut addGestureRecognizer:longPressBut];
 
-    //Load all BFF and insert imnages into scroll view. Keep the first one as workingRecord
- //   [self loadBffs];
+    //Load all BFF and insert images into scroll view. Keep the first one as workingRecord
+    [self loadBffs];
     loadFlag=NO;
-//    [appDelegate.workingBFF setValue:maca forKey:@"bffUID"];
     [self getArrays];
-    [self startBonjour];
-  //  connected.hidden=NO;
-    dispatch_async(dispatch_get_main_queue(), ^{
-        if(appDelegate.workingBFF!=NULL)
-            [appDelegate startTelegramService:[appDelegate.workingBFF valueForKey:@"bffMQTT"] withPort:@"1883"]; //connect to MQTT server
-        
-        if(appDelegate.client){
-  //           viejo=appDelegate.client.messageHandler;
-             [appDelegate.client setMessageHandler:aca];
-        }
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-            [self hud];
-            [comm lsender:@"session?password=zipo" andAnswer:NULL andTimeOut:1 vcController:self];
-        });
-    });
-
+    
+    if(appDelegate.workingBFF!=NULL)
+    {
+        [self hud:30];
+        [appDelegate startTelegramService:[appDelegate.workingBFF valueForKey:@"bffMQTT"] withPort:[appDelegate.workingBFF valueForKey:@"bffMQTTPort"] respuesta:@"Connect" app:@"HeatIoT" abrev:@"ht"]; //connect to MQTT server
+    }
 }
 
 - (void)didReceiveMemoryWarning {
@@ -1035,24 +811,37 @@ MQTTMessageHandler aca=^(MQTTMessage *message)
 -(void)viewDidDisappear:(BOOL)animated
 {
     [super viewDidDisappear:animated];
-    [appDelegate.client setMessageHandler:viejo];
 
     NSNumber *passw=[[NSUserDefaults standardUserDefaults]objectForKey:@"password"];
     if (passw.integerValue==0)
         [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationWillEnterForegroundNotification object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
 
 -(void)viewDidAppear:(BOOL)animated
 {
+    NSDictionary *texto;
+
     if(!loadFlag)
     {
         [self loadBffs];
         loadFlag=YES;
     }
-  yo=self;
-    if(appDelegate.client)
-        [appDelegate.client setMessageHandler:aca];
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(validConn:)
+                                                 name:@"Connect"
+                                               object:texto];
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(rxMessage:)
+                                                 name:@"Mensaje"
+                                               object:texto];
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(validSubscribe:)
+                                                 name:@"Subscribe"
+                                               object:texto];
 
     NSNumber *passw=[[NSUserDefaults standardUserDefaults]objectForKey:@"password"];
     [passSW setImage:passw.integerValue?passOn:passOff forState:UIControlStateNormal];
@@ -1073,115 +862,14 @@ MQTTMessageHandler aca=^(MQTTMessage *message)
         [self loadBffs];
         batchf=NO;
     }
-    //   petName.text = [appDelegate.workingBFF valueForKey:@"bffName"];
-    [self performSelector:@selector(getMealCount) withObject:NULL afterDelay:1.0];
+
+    [self performSelector:@selector(getUnitCount) withObject:NULL afterDelay:1.0];
     
- //      NSString *uid=[[[UIDevice currentDevice]identifierForVendor]UUIDString];
-//    LogDebug(@"Uid %@ ",uid);
     petName.text = [appDelegate.workingBFF valueForKey:@"bffName"];
     [[appDelegate.tabBarController.tabBar.items objectAtIndex:0] setBadgeValue:[NSString stringWithFormat:@"%ld",(unsigned long)appDelegate.bffs.count]];
     [self OnOffState:(int)[[appDelegate.workingBFF valueForKey:@"bffOnOff"] integerValue]];
-
-    if(appDelegate.workingBFF)
-    {
-        [appDelegate subscribeMQTT:[NSString stringWithFormat:@"HeatIoT/%@/%@/%@/MSG",[appDelegate.workingBFF valueForKey:@"bffGroup"],[appDelegate.workingBFF valueForKey:@"bffName"], [[NSUserDefaults standardUserDefaults]objectForKey:@"bffUID"]]];
-    }
     
 }
-
-#pragma mark -
-#pragma mark NSNetServiceBrowser Delegate Method Implementations
-
-// New service was found
-- (void)netServiceBrowser:(NSNetServiceBrowser *)netServiceBrowser didFindService:(NSNetService *)netService moreComing:(BOOL)moreServicesComing {
-    // Make sure that we don't have such service already (why would this happen? not sure)
-    //   LogDebug(@"Found service");
-    if ( ! [appDelegate.feeders  containsObject:netService] ) {
-        // Add it to our list
-        [appDelegate.feeders  addObject:netService];
-    }
-    
-    // If more entries are coming, no need to update UI just yet
-    if ( moreServicesComing ) {
-        return;
-    }
-    //sort them for easy comparison agains WiFi Ap list if needed
-    appDelegate.feeders = [[appDelegate.feeders sortedArrayUsingComparator:^NSComparisonResult(NSNetService* a, NSNetService* b) {
-        NSString *first = a.name;
-        NSString *second = b.name;
-        return [first compare:second];
-    }] mutableCopy];
-    
-    
-    ////  LogDebug(@"Done BONJ %@",appDelegate.feeders);
-    for (NSNetService *comida in appDelegate.feeders )
-    {
-        comida.delegate=self;
-        //    LogDebug(@"comida %@",comida);
-        [comida resolveWithTimeout:10.0];
-    }
-}
-
-
-// Service was removed
-- (void)netServiceBrowser:(NSNetServiceBrowser *)netServiceBrowser didRemoveService:(NSNetService *)netService moreComing:(BOOL)moreServicesComing {
-    // Remove from list
-    
-       LogDebug(@"BJ Remove %@ name %@",netService,netService.name);
-    NSString *nombre=netService.name;
-    [appDelegate.feeders  removeObject:netService];
-    [appDelegate.feed_addr removeObjectForKey:[nombre uppercaseString]];
-    /*
-    [UIView transitionWithView:connected
-                      duration:0.4
-                       options:UIViewAnimationOptionTransitionCrossDissolve
-                    animations:NULL
-                    completion:NULL];
-    
-    
-    // if ([self findPartialKey:[[appDelegate.workingBFF valueForKey:@"bffName" ] uppercaseString]])
-    connected.hidden=NO;
-    */
-}
-
-- (void)netServiceDidResolveAddress:(NSNetService *)sender {
-    struct sockaddr_in ip;
-    uint16_t temp;
-    NSString *dir;
-    [[sender.addresses objectAtIndex:0]  getBytes: &ip length:sizeof(ip)];
-    temp=CFSwapInt16HostToBig(ip.sin_port);
-    int hay=(int)appDelegate.bffs.count;
-    if(ip.sin_family == AF_INET)
-    {
-        char* serviceInAddr = inet_ntoa(ip.sin_addr);
-        dir=[NSString stringWithFormat: @"http://%s/", serviceInAddr, temp];
-             LogDebug(@"Adding %@ %@",dir,[sender.name uppercaseString]);
-        [appDelegate.feed_addr setObject:dir forKey:[sender.name uppercaseString]];
-        if (hay>0)
-        {
-            for (NSManagedObject *cual in appDelegate.bffs)
-            {
-                if ([sender.name isEqualToString:[cual valueForKey:@"bffName"]]){
-                    //    LogDebug(@"set lastip %@ for %@",dir, [cual valueForKey:@"bffName"]);
-                    [cual setValue:dir forKey:@"bffLastIpPort"];
-                }
-            }
-            /*
-            if ([sender.name rangeOfString:[appDelegate.workingBFF valueForKey:@"bffName"]].location != NSNotFound)
-            {
-                [UIView transitionWithView:connected
-                                  duration:0.4
-                                   options:UIViewAnimationOptionTransitionCrossDissolve
-                                animations:NULL
-                                completion:NULL];
-                connected.hidden=YES;
-                
-            }
-             */
-        }
-    }
-}
-
 
 #pragma mark <UICollectionViewDataSource>
 
@@ -1287,11 +975,11 @@ MQTTMessageHandler aca=^(MQTTMessage *message)
 -(void)collectionView:(UICollectionView *)collectionView
 didSelectItemAtIndexPath:(NSIndexPath *)indexPath {
 
-    [appDelegate unsubscribeMQTT:[NSString stringWithFormat:@"HeatIoT/%@/%@/%@/MSG",[appDelegate.workingBFF valueForKey:@"bffGroup"],[appDelegate.workingBFF valueForKey:@"bffName"], [[NSUserDefaults standardUserDefaults]objectForKey:@"bffUID"]]];
+//    [appDelegate unsubscribeMQTT:[NSString stringWithFormat:@"HeatIoT/%@/%@/%@/MSG",[appDelegate.workingBFF valueForKey:@"bffGroup"],[appDelegate.workingBFF valueForKey:@"bffName"], [[NSUserDefaults standardUserDefaults]objectForKey:@"bffUID"]]];
     indexOfPage=(int)indexPath.row;
     appDelegate.lastpos=indexOfPage;
     appDelegate.workingBFF=appDelegate.bffs[indexOfPage];
-    [appDelegate subscribeMQTT:[NSString stringWithFormat:@"HeatIoT/%@/%@/%@/MSG",[appDelegate.workingBFF valueForKey:@"bffGroup"],[appDelegate.workingBFF valueForKey:@"bffName"], [[NSUserDefaults standardUserDefaults]objectForKey:@"bffUID"]]];
+//    [appDelegate subscribeMQTT:[NSString stringWithFormat:@"HeatIoT/%@/%@/%@/MSG",[appDelegate.workingBFF valueForKey:@"bffGroup"],[appDelegate.workingBFF valueForKey:@"bffName"], [[NSUserDefaults standardUserDefaults]objectForKey:@"bffUID"]]];
   
     //only subscribe unsubscribe
 //    [appDelegate startTelegramService:[appDelegate.workingBFF valueForKey:@"bffMQTT"] withPort:@"1883"]; //connect to MQTT server

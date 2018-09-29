@@ -7,9 +7,7 @@
 #import <UIKit/UIKit.h>
 #import "FirstViewController.h"
 #import "AppDelegate.h"
-#import "httpVc.h"
 #import "DoughnutChartContainerView.h"
-#import "blurLabel.h"
 #import "btSimplePopUp.h"
 #import "AMTumblrHud.h"
 
@@ -25,13 +23,11 @@
     AppDelegate *appDelegate;
     NSString *mis,*wtemp;
     NSMutableString *answer;
-    httpVC *comm;
     float costoTm,costoTd;
     NSMutableArray *slices,*sliceNames;
     NSMutableArray *sliceColors;
     int globalSlice,cualcerca;
     UIView *markerView,*tempFaucet,*heater;
-    blurLabel *copyTime;
     BOOL firstMakeHour,runningf;
     UIView *backGroundBlurr;
     NSTimer *theStatusTimer,*theFirstTimer;
@@ -40,9 +36,10 @@
     UIColor *colorActive,*normalColor,*cercaColor,*offColor,*onColor,*notTodayColor;
     UIImage *redHeat,*blueHeat,*statusOn,*statusOff;
     bool statusSend;
-    MQTTMessageHandler viejo;
     AMTumblrHud *tumblrHUD ;
     NSTimer *mitimer;
+    UIAlertController* alert;
+    int oldrelay;
 }
 -(IBAction)editar:(UIBarButtonItem *)sender ;
 

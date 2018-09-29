@@ -7,17 +7,16 @@
 //
 
 #import <UIKit/UIKit.h>
-#import "httpVC.h"
 #import "AppDelegate.h"
 #import "AMTumblrHud.h"
 
 @interface resetVC : UIViewController
 {
-    httpVC *comm;
     NSString *mis;
     AppDelegate* appDelegate;
     AMTumblrHud *tumblrHUD ;
     NSTimer *mitimer;
+    UIAlertController* alert;
 }
 
 @property (strong) IBOutlet UIImageView *bffIcon,*hhud;

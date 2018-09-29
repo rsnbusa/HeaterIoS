@@ -10,7 +10,6 @@
 #import "AppDelegate.h"
 #import "CCColorCube.h"
 #import "httpVC.h"
-#import "MQTTKit.h"
 #import "AMTumblrHud.h"
 
 @interface FirstViewController : UIViewController <UIScrollViewDelegate, NSNetServiceDelegate, NSNetServiceBrowserDelegate,UICollectionViewDataSource, UICollectionViewDelegate,NSStreamDelegate >
@@ -23,15 +22,13 @@
     int fotoHV;
     int indexOfPage;
     CCColorCube *colorCube;
-    httpVC *comm;
-    uint8_t buffer[40000];
     UIView *backGroundBlurr;
     int oldcomo;
     UIImage *passOn,*passOff;
     UIImageView *lscrollView;
-    MQTTMessageHandler viejo;
     AMTumblrHud *tumblrHUD ;
     NSTimer *mitimer;
+    UIAlertController* alert;
 }
 //@property (strong,nonatomic) IBOutlet
 @property (strong) NSMutableString *host,*answer,*mqttServer;

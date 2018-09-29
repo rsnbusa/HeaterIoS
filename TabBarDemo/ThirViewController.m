@@ -14,7 +14,6 @@
 #import "HMSegmentedControl.h"
 #import "feederViewController.h"
 #import "TextFieldValidator.h"
-#import "httpVc.h"
 #import "btSimplePopUp.h"
 
 #if 0 // set to 1 to enable logs
@@ -27,19 +26,23 @@
 @import UIKit;
 @implementation ThirViewController
 @synthesize datePicker,dias,dirtyt,dirtys,openT,waitT,name,lastSegment,theNum,bffIcon,hastaPicker,passww,notis,circleTemp,temp,lowTemp,lowTempLabel,once;
-id yo;
 
-
--(void)killBill
+-(void)timeout
 {
     if(tumblrHUD)
         [tumblrHUD hide];
-    [self showMessage:@"Meter Msg" withMessage:@"Comm Timeout"];
+    [self showMessage:@"Heater Msg" withMessage:@"Comm Timeout"];
 }
 
 -(void)hud
 {
-    dispatch_async(dispatch_get_main_queue(), ^{
+    
+    if(tumblrHUD)
+    {
+        [tumblrHUD hide];
+        tumblrHUD=nil;
+    }
+   
         tumblrHUD = [[AMTumblrHud alloc] initWithFrame:CGRectMake((CGFloat) (_hhud.frame.origin.x),
                                                                   (CGFloat) (_hhud.frame.origin.y), 55, 20)];
         tumblrHUD.hudColor = _hhud.backgroundColor;
@@ -47,20 +50,22 @@ id yo;
         [tumblrHUD showAnimated:YES];
         mitimer=[NSTimer scheduledTimerWithTimeInterval:10
                                                  target:self
-                                               selector:@selector(killBill)
+                                               selector:@selector(timeout)
                                                userInfo:nil
                                                 repeats:NO];
-    });
+
 }
 
 
 -(void)showMessage:(NSString*)title withMessage:(NSString*)que
 {
-    if(mitimer)
-        [mitimer invalidate];
-    dispatch_async(dispatch_get_main_queue(), ^{ [tumblrHUD hide];});
+    if(alert)
+    {
+        [alert dismissViewControllerAnimated:YES completion:nil];
+        alert=nil;
+    }
     
-    UIAlertController* alert = [UIAlertController alertControllerWithTitle:title
+    alert = [UIAlertController alertControllerWithTitle:title
                                                                    message:que
                                                             preferredStyle:UIAlertControllerStyleAlert];
     UIAlertAction* defaultAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault
@@ -75,20 +80,27 @@ id yo;
     });
 }
 
--(void)setCallBackNull
+- (void) rxMessage:(NSNotification *) notification
 {
-    [appDelegate.client setMessageHandler:NULL];
+    if(tumblrHUD)
+        [tumblrHUD hide];
+    if(mitimer)
+        [mitimer invalidate];
+    
+    LogDebug (@"RX Successfull %@",notification.userInfo);
+    
+    if ([[notification name] isEqualToString:@"3Show"])
+    {
+         [self showMessage:@"HeatIoT Timer Msg" withMessage:notification.userInfo[@"Answer"]];
+   }
+    
+    if ([[notification name] isEqualToString:@"TimerAdd"])
+    {
+        [self timerAddedOk:notification.userInfo[@"Answer"]];
+    }
+    
 }
 
-
-MQTTMessageHandler settingsMsg=^(MQTTMessage *message)
-{
-    [yo setCallBackNull];
-    LogDebug(@"SettingsMsg %@ %@",message.payload,message.payloadString);
-    dispatch_async(dispatch_get_main_queue(), ^{
-        [yo showMessage:@"HeatIoT Timer Msg" withMessage:message.payloadString];
-    });
-};
 
 
 -(void)calcTimeToTemp
@@ -274,18 +286,10 @@ MQTTMessageHandler settingsMsg=^(MQTTMessage *message)
         LogDebug(@"Save error %@",error);
         return;//if we cant save it return and dont send anything toi the esp8266
     }
-    [yo showOkMessage];
+    [self showOkMessage];
 
 
 }
-MQTTMessageHandler addTimerRx=^(MQTTMessage *message)
-{
-    [yo setCallBackNull];
-    LogDebug(@"Timer Add %@ %@",message.payload,message.payloadString);
-    dispatch_async(dispatch_get_main_queue(), ^{
-        [yo timerAddedOk:message.payloadString];
-    });
-};
 
 -(void)saveChanges
 {
@@ -405,20 +409,7 @@ MQTTMessageHandler addTimerRx=^(MQTTMessage *message)
     //send ESP8266 a New Meal, id=position in array, day=byte with bits for each day,hour-minute,Open time miliseconds and wait time
     mis=[NSString stringWithFormat:@"timerAdd?id=%@&day=%d&fromdate=%d&duration=%d&notis=%d&onOff=%d&temp=%d&once=%d",myNewString,ld,(int)[fromDate timeIntervalSince1970],(int)timeDiff,notis.on,1,(int)circleTemp.currentValue,once.on];//multiple arguments
     [self hud];
-    if(appDelegate.client)
-        [appDelegate.client setMessageHandler:addTimerRx];
-    int reply=[comm lsender:mis andAnswer:NULL andTimeOut:[[[NSUserDefaults standardUserDefaults]objectForKey:@"txTimeOut"] intValue] vcController:self];
-//    if (!reply)
-//        [self showErrorMessage];
-//    else
-//    {
-//        [newServing setValue:[NSDate date] forKey:@"dateAdded"];// means it has been synced
-//        [self showOkMessage];
-//    }
-    
-    // save the data
-   
-
+    [appDelegate.chan enviaWithQue:mis notikey:@"TimerAdd"];
 }
 
 
@@ -499,10 +490,11 @@ MQTTMessageHandler addTimerRx=^(MQTTMessage *message)
 
 - (void)viewWillDisappear:(BOOL)animated { //Is used as a Save Options if anything was changed Instead of Buttons
     [super viewWillDisappear:animated];
-    if (dontsavef) return;
-   
+     if (dontsavef) return;
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+}
 
-   }
+
 /*
 -(void)segment
 {
@@ -529,7 +521,7 @@ MQTTMessageHandler addTimerRx=^(MQTTMessage *message)
 */
 -(void)viewWillAppear:(BOOL)animated
 {
-    yo=self;
+    NSDictionary *dic;
     [super viewWillAppear:animated];
     LogDebug(@"Passf %d",appDelegate.passwordf);
     if (!appDelegate.passwordf)
@@ -539,6 +531,16 @@ MQTTMessageHandler addTimerRx=^(MQTTMessage *message)
     }
     
     [self workingIcon];
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(rxMessage:)
+                                                 name:@"TimerAdd"
+                                               object:dic];
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(rxMessage:)
+                                                 name:@"3Show"
+                                               object:dic];
+    
     dontsavef=false;
    // [self segment];
     [name becomeFirstResponder];
@@ -584,17 +586,7 @@ MQTTMessageHandler addTimerRx=^(MQTTMessage *message)
     [self performSegueWithIdentifier:@"settingsVC" sender:self];
     
 }
-/*
--(void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
-    if ([segue.identifier isEqualToString:@"settingsVC"]) { //going to custom timing, set timing values
-        //pass the variable and context
-        feederViewController *destViewController = segue.destinationViewController;
-        destViewController.openT = openT;
-        destViewController.waitT = waitT;
-        destViewController.fc=self;
-    }
-}
-*/
+
 - (void)segmentedControlChangedValue:(HMSegmentedControl *)segmentedControl {
     appDelegate.lastbutton=(int)segmentedControl.selectedSegmentIndex;
     NSString *cualo=[NSString stringWithFormat:@"serv%dOpen",appDelegate.lastbutton];
@@ -634,7 +626,6 @@ MQTTMessageHandler addTimerRx=^(MQTTMessage *message)
 
 - (void)viewDidLoad {
 
-    yo=self;
     [super viewDidLoad];
     comm=[httpVC new];
     [self pickerColors];

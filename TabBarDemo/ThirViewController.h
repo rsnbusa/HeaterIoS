@@ -12,7 +12,6 @@
 #import "HMSegmentedControl.h"
 #import "AppDelegate.h"
 #import "TextFieldValidator.h"
-#import "httpVc.h"
 #import "CircularPickerView.h"
 #import "AMTumblrHud.h"
 
@@ -32,6 +31,7 @@
     BOOL arrowState;
     AMTumblrHud *tumblrHUD ;
     NSTimer *mitimer;
+    UIAlertController* alert;
 }
 
 @property int theNum;

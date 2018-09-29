@@ -7,20 +7,18 @@
 //
 
 #import <UIKit/UIKit.h>
-#import "httpVC.h"
 #import "AppDelegate.h"
 #import "AMTumblrHud.h"
 @interface Log : UIViewController
 {
-    httpVC *comm;
     NSString *mis;
     AppDelegate* appDelegate;
     bool save;
     NSMutableArray *entries;
     NSInteger randomNumber;
-    MQTTMessageHandler lastmess;
     AMTumblrHud *tumblrHUD ;
     NSTimer *mitimer;
+    UIAlertController* alert;
 }
 @property (strong) IBOutlet UIImageView *bffIcon,*hhud;
 @property (strong) IBOutlet UITableView *table;

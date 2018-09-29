@@ -26,9 +26,7 @@ extern BOOL CheckWiFi();
 
 @implementation mqttUser
 
-id yo;
-
--(void)killBill
+-(void)timeout
 {
     if(tumblrHUD)
         [tumblrHUD hide];
@@ -37,7 +35,13 @@ id yo;
 
 -(void)hud
 {
-    dispatch_async(dispatch_get_main_queue(), ^{
+    
+    if(tumblrHUD)
+    {
+        [tumblrHUD hide];
+        tumblrHUD=nil;
+    }
+
         tumblrHUD = [[AMTumblrHud alloc] initWithFrame:CGRectMake((CGFloat) (_hhud.frame.origin.x),
                                                                   (CGFloat) (_hhud.frame.origin.y), 55, 20)];
         tumblrHUD.hudColor = _hhud.backgroundColor;
@@ -45,30 +49,26 @@ id yo;
         [tumblrHUD showAnimated:YES];
         mitimer=[NSTimer scheduledTimerWithTimeInterval:10
                                                  target:self
-                                               selector:@selector(killBill)
+                                               selector:@selector(timeout)
                                                userInfo:nil
                                                 repeats:NO];
-    });
+
 }
--(void)setCallBackNull
-{
-    [appDelegate.client setMessageHandler:NULL];
-}
+
 
 -(void)showMessage:(NSString*)title withMessage:(NSString*)que
 {
-    if(mitimer)
-        [mitimer invalidate];
-    dispatch_async(dispatch_get_main_queue(), ^{[tumblrHUD hide];});
-    
-        UIAlertController* alert = [UIAlertController alertControllerWithTitle:title
+    if(alert)
+    {
+        [alert dismissViewControllerAnimated:YES completion:nil];
+        alert=nil;
+    }
+
+        alert = [UIAlertController alertControllerWithTitle:title
                                                                        message:que
                                                                 preferredStyle:UIAlertControllerStyleAlert];
         UIAlertAction* defaultAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault
-                                                              handler:^(UIAlertAction * action) {
-                                                                  
-                                                                  
-                                                              }];
+                                                              handler:nil];
         
         [alert addAction:defaultAction];
         [self presentViewController:alert animated:YES completion:nil];
@@ -76,17 +76,6 @@ id yo;
             [alert dismissViewControllerAnimated:YES completion:nil];
         });
 }
-
-
-MQTTMessageHandler mqttRx=^(MQTTMessage *message)
-{
-    
-    LogDebug(@"HeatIoT %@ %@",message.payload,message.payloadString);
-    
-    dispatch_async(dispatch_get_main_queue(), ^{
-        [yo showMessage:@"HeatIoT Settings Msg" withMessage:message.payloadString];
-    });
-};
 
 -(IBAction)update:(id)sender
 {
@@ -97,10 +86,10 @@ MQTTMessageHandler mqttRx=^(MQTTMessage *message)
     [[NSUserDefaults standardUserDefaults] setObject:[_meterid.text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]] forKey:@"mqttuser"];
     [[NSUserDefaults standardUserDefaults] setObject:[_startkwh.text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]] forKey:@"mqttpass"];
     [[NSUserDefaults standardUserDefaults]  synchronize];
+    
     mis=[NSString stringWithFormat:@"mqtt?password=zipo&uupp=%@&passq=%@&qqqq=%@&port=%@",_meterid.text,_startkwh.text,_server.text,_port.text];
- //   NSLog(@"Mqtt send %@",mis);
-    [self hud];
-    [comm lsender:mis andAnswer:NULL andTimeOut:2 vcController:self];
+  //  [self hud];
+    [appDelegate.chan enviaWithQue:mis notikey:nil];
 }
 
 
@@ -109,7 +98,6 @@ MQTTMessageHandler mqttRx=^(MQTTMessage *message)
     
     UIImage *licon;
     NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-    //   NSString *final=[NSString stringWithFormat:@"%@.png",[appDelegate.workingBFF valueForKey:@"bffName"]];
     NSString *final=[NSString stringWithFormat:@"%@.txt",[appDelegate.workingBFF valueForKey:@"bffName"]];
     NSString *filePath = [[paths objectAtIndex:0] stringByAppendingPathComponent:final];
     licon=[UIImage imageWithContentsOfFile:filePath];
@@ -120,40 +108,33 @@ MQTTMessageHandler mqttRx=^(MQTTMessage *message)
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    yo=self;
     appDelegate = (AppDelegate *)[[UIApplication sharedApplication] delegate];
     [self workingIcon];
-    if(appDelegate.client)
-        [appDelegate.client setMessageHandler:mqttRx];
-    comm=[httpVC new];
-    _server.text= [[NSUserDefaults standardUserDefaults] objectForKey:@"mqttserver"];
-    _port.text= [[NSUserDefaults standardUserDefaults] objectForKey:@"mqttport"];
-    _meterid.text= [[NSUserDefaults standardUserDefaults] objectForKey:@"mqttuser"];
-    _startkwh.text= [[NSUserDefaults standardUserDefaults] objectForKey:@"mqttpass"];
-    
+    _server.text= [appDelegate.workingBFF valueForKey:@"bffMQTT"];
+    _port.text= [NSString stringWithFormat:@"%@",[appDelegate.workingBFF valueForKey:@"bffMQTTPort"]];
+    _meterid.text= [appDelegate.workingBFF valueForKey:@"bffMqttU"];
+    _startkwh.text= [appDelegate.workingBFF valueForKey:@"bffMqttP"];
 }
 
 -(void)viewDidAppear:(BOOL)animated
 {
-    yo=self;
     [super viewDidAppear:animated];
     [self workingIcon];
-    if(appDelegate.client)
-        [appDelegate.client setMessageHandler:mqttRx];
 }
+
+-(void)viewDidDisappear:(BOOL)animated
+{
+    [super viewDidDisappear:animated];
+    
+    NSNumber *passw=[[NSUserDefaults standardUserDefaults]objectForKey:@"password"];
+    if (passw.integerValue==0)
+        [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationWillEnterForegroundNotification object:nil];
+}
+
+
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
 }
-
-/*
-#pragma mark - Navigation
-
-// In a storyboard-based application, you will often want to do a little preparation before navigation
-- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
-    // Get the new view controller using [segue destinationViewController].
-    // Pass the selected object to the new view controller.
-}
-*/
 
 @end
